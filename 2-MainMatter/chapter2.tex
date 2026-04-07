@@ -100,22 +100,134 @@ frameworks, and cost optimisation techniques that build upon these foundations
 in production-grade enterprise systems.
 
 %%------------------------------------------------------------
-%% SUBSECTION: Multi-Cloud Environments
+%% SECTION: Large Language Models in Production
+%% Covers: LLM overview and scaling laws, RLHF/instruction tuning,
+%% open-weight models, and the enterprise deployment spectrum.
 %%------------------------------------------------------------
-\subsection{Multi-Cloud Environments}
-\label{sec:multicloud}
+\section{Large Language Models in Production}
+\label{sec:llms-in-production}
 
-% TODO: Describe the multi-cloud landscape, challenges and cost models.
+The preceding section established the two foundational breakthroughs that made
+modern language AI possible: distributed word representations and the
+Transformer architecture. Building upon these primitives, the field witnessed
+a rapid consolidation around a unified paradigm — the large language model
+(LLM) — in which ever-larger Transformer-based networks, pre-trained on
+internet-scale corpora, acquire general-purpose language competence that can be
+redirected toward downstream tasks with minimal additional supervision. This
+section characterizes LLMs as a class, traces the methodological evolution from
+raw pre-training to instruction-following alignment, and examines the
+architectural and economic implications of deploying such systems at enterprise
+scale.
 
+\subsection{Large Language Models: An Overview}
+\label{sec:llm-overview}
 
-%%------------------------------------------------------------
-%% SUBSECTION: Cost Optimisation in Cloud Computing
-%%------------------------------------------------------------
-\subsection{Cost Optimisation in Cloud Computing}
-\label{sec:cost-opt}
+% Defines LLMs via the emergent-capability criterion; introduces decoder-only
+% architecture and contrasts with encoder-only BERT; establishes scaling laws
+% as the link between compute investment and token-cost motivation.
+A large language model is a neural language model of sufficient parameter count
+and training data scale that general linguistic and reasoning capabilities emerge
+as a consequence of the pre-training objective alone, without task-specific
+architectural modification~\cite{brown2020gpt3}. Pre-training proceeds via
+self-supervised next-token prediction over corpora of hundreds of billions to
+trillions of tokens, optimizing the model to assign high probability to
+naturally occurring text. The resulting parameter weights encode an implicit
+representation of syntax, semantics, world knowledge, and rudimentary reasoning
+chains that can be elicited through natural language prompting.
 
-% TODO: Survey existing cost-optimisation approaches.
+LLMs are predominantly realized as \textit{decoder-only} Transformer
+architectures~\cite{vaswani2017attention}, in which the self-attention layers
+apply a causal mask that restricts each token's attention to its leftward
+context, preserving the autoregressive generation property. This design choice
+contrasts with the encoder-only variant typified by BERT~\cite{devlin2018bert},
+which produces bidirectional contextual representations optimized for
+discriminative tasks. For generative applications — intelligent assistants,
+automated reasoning, and document synthesis — the decoder-only paradigm
+dominates, and it is this class of model that underpins the enterprise GenAI
+systems examined in this dissertation.
 
+A defining empirical finding in the development of LLMs is the existence of
+\textit{scaling laws}: systematic, power-law relationships between model size,
+training compute, dataset volume, and downstream performance~\cite{brown2020gpt3}.
+Scaling laws imply that performance is largely predictable and improvable by
+increasing any of the three axes, establishing a framework within which
+investment in compute translates into measurable capability gains. This property
+has driven the successive scaling of commercial models and, critically, has also
+made token consumption a dominant cost variable: larger models process the same
+input more expensively, directly motivating the cost optimization strategies
+central to this work.
+
+\subsection{From Pre-training to Instruction Tuning}
+\label{sec:instruction-tuning}
+
+% Motivates the alignment gap between next-token pre-training and user intent;
+% describes the three-stage RLHF pipeline (SFT → reward model → PPO) from
+% InstructGPT; highlights the key empirical result that a 1.3B aligned model
+% outperforms a 175B unaligned one — directly informing dynamic model selection.
+Despite the generative competence acquired during pre-training, early LLMs
+exhibited a systematic misalignment between model behavior and user intent.
+A model trained solely to predict the next token on a web-scale corpus learns to
+continue text in statistically plausible ways, but not necessarily in ways that
+are \textit{helpful}, \textit{honest}, or \textit{harmless} when deployed as an
+interactive assistant. Ouyang et al.~\cite{ouyang2022instructgpt} addressed this
+gap by introducing a three-stage fine-tuning pipeline centered on
+Reinforcement Learning from Human Feedback (RLHF).
+
+The procedure operates as follows. First, a \textit{supervised fine-tuning}
+(SFT) phase trains the base model on high-quality demonstrations of desired
+behavior, produced by human labelers on a curated prompt distribution. Second, a
+\textit{reward model} is trained to predict human preference scores over pairs of
+model outputs, internalizing a proxy for human judgment. Third, the SFT model is
+further optimized against the reward model signal using Proximal Policy
+Optimization (PPO), an online reinforcement learning algorithm. The resulting
+InstructGPT models, despite comprising as few as 1.3 billion parameters, were
+consistently preferred by human evaluators over the unaligned 175-billion
+parameter GPT-3 baseline, demonstrating that alignment quality is not strictly
+a function of scale~\cite{ouyang2022instructgpt}. This result has profound
+practical implications: it established RLHF as the standard post-training
+procedure for production LLMs and confirmed that an aligned smaller model can
+match or exceed the utility of a larger unaligned one — a relationship that
+informs the dynamic model selection strategies explored in this
+dissertation.
+
+\subsection{Open-Weight Models and the Deployment Spectrum}
+\label{sec:open-weight-models}
+
+% Contrasts proprietary API models (GPT-4, Claude) with self-hostable
+% open-weight alternatives (Llama 2); introduces the LLM cascading / dynamic
+% model selection paradigm as the core cost-optimization mechanism evaluated
+% in the Maestro framework.
+The commercial LLM landscape is stratified between proprietary, API-accessed
+models and openly released, self-hostable alternatives. The former class,
+exemplified by OpenAI's GPT-4 family and Anthropic's Claude series, exposes
+inference through token-priced cloud APIs; the latter is represented most
+prominently by Meta AI's Llama series. Touvron et al.~\cite{touvron2023llama2}
+introduced Llama~2, a family of models ranging from 7 to 70 billion parameters,
+pre-trained on two trillion tokens and released under a license permitting
+commercial use. Fine-tuned variants — Llama~2-Chat — further apply RLHF
+alignment, achieving performance competitive with closed-source alternatives on
+standard benchmarks while remaining locally deployable~\cite{touvron2023llama2}.
+
+The existence of capable open-weight models introduces a consequential degree of
+freedom into enterprise GenAI architectures. Rather than committing uniformly to
+a single proprietary provider, organizations may route inference dynamically
+across a portfolio of models differentiated by capability tier, latency
+characteristics, and per-token cost. Smaller open-weight models, deployed
+on-premise or on reserved cloud instances, can serve high-volume, lower-complexity
+queries at substantially reduced marginal cost, while API-accessed frontier
+models handle tasks requiring peak reasoning performance. This model routing
+paradigm — often referred to as \textit{LLM cascading} or
+\textit{dynamic model selection} — is a central cost optimization mechanism
+evaluated in this dissertation in the context of the Maestro framework's
+multi-cloud deployment~\cite{touvron2023llama2, ouyang2022instructgpt}.
+
+Together, the progression from raw pre-training through RLHF alignment to the
+open-weight deployment spectrum defines the operational environment within which
+enterprise GenAI frameworks must function. The ability to select, combine, and
+switch between models of varying capability and cost is not merely an
+architectural convenience but a financial imperative in production systems
+where token consumption can scale three to five times per client without
+deliberate optimization~\cite{ouyang2022instructgpt}.
 
 %%------------------------------------------------------------
 %% SECTION: Related Work
