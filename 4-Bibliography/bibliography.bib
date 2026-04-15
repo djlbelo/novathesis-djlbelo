@@ -8,10 +8,10 @@
 % Recommended tools: Zotero, JabRef, or direct export from Google Scholar / ACM DL / IEEE Xplore.
 %
 
-@inproceedings{mikolov2013word2vec,
+@misc{mikolov2013word2vec,
   author        = {Mikolov, Tomas and Chen, Kai and Corrado, Greg and Dean, Jeffrey},
   title         = {Efficient Estimation of Word Representations in Vector Space},
-  booktitle     = {1st International Conference on Learning Representations (ICLR)},
+  month         = sep,
   year          = {2013},
   eprint        = {1301.3781},
   archivePrefix = {arXiv},
@@ -25,6 +25,7 @@
                Jones, Llion and Gomez, Aidan N. and Kaiser, {\L}ukasz and Polosukhin, Illia},
   title     = {Attention Is All You Need},
   booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  month     = dec,
   year      = {2017},
   volume    = {30},
   doi       = {10.48550/arXiv.1706.03762},
@@ -36,6 +37,7 @@
   title     = {{BERT}: Pre-training of Deep Bidirectional Transformers for Language Understanding},
   booktitle = {Proceedings of the 2019 Conference of the North {A}merican Chapter of the
                Association for Computational Linguistics (NAACL-HLT)},
+  month     = jun,
   year      = {2019},
   pages     = {4171--4186},
   doi       = {10.18653/v1/N19-1423},
@@ -44,12 +46,19 @@
 @inproceedings{brown2020gpt3,
   author    = {Brown, Tom B. and Mann, Benjamin and Ryder, Nick and Subbiah, Melanie and
                Kaplan, Jared and Dhariwal, Prafulla and Neelakantan, Arvind and Shyam, Pranav and
-               Sastry, Girish and Askell, Amanda and others},
+               Sastry, Girish and Askell, Amanda and Agarwal, Sandhini and Herbert-Voss, Ariel and
+               Krueger, Gretchen and Henighan, Tom and Child, Rewon and Ramesh, Aditya and
+               Ziegler, Daniel M. and Wu, Jeffrey and Winter, Clemens and Hesse, Christopher and
+               Chen, Mark and Sigler, Eric and Litwin, Mateusz and Gray, Scott and Chess, Benjamin and
+               Clark, Jack and Berner, Christopher and McCandlish, Sam and Radford, Alec and
+               Sutskever, Ilya and Amodei, Dario},
   title     = {Language Models are Few-Shot Learners},
   booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  month     = dec,
   year      = {2020},
   volume    = {33},
   pages     = {1877--1901},
+  doi       = {10.48550/arXiv.2005.14165},
   url       = {https://arxiv.org/abs/2005.14165},
 }
 
@@ -59,27 +68,151 @@
                Yih, Wen-tau and Rockt\"{a}schel, Tim and Riedel, Sebastian and Kiela, Douwe},
   title     = {Retrieval-Augmented Generation for Knowledge-Intensive {NLP} Tasks},
   booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  month     = dec,
   year      = {2020},
   volume    = {33},
   pages     = {9459--9474},
+  doi       = {10.48550/arXiv.2005.11401},
   url       = {https://arxiv.org/abs/2005.11401},
 }
 
-@article{ouyang2022instructgpt,
-  author  = {Ouyang, Long and Wu, Jeff and Jiang, Xu and Almeida, Diogo and
-             Wainwright, Carroll L. and Mishkin, Pamela and Zhang, Chong and
-             Agarwal, Sandhini and Slama, Katarina and Ray, Alex and others},
-  title   = {Training Language Models to Follow Instructions with Human Feedback},
-  journal = {arXiv preprint arXiv:2203.02155},
-  year    = {2022},
-  url     = {https://arxiv.org/abs/2203.02155},
+@inproceedings{ouyang2022instructgpt,
+  author    = {Ouyang, Long and Wu, Jeff and Jiang, Xu and Almeida, Diogo and
+               Wainwright, Carroll L. and Mishkin, Pamela and Zhang, Chong and
+               Agarwal, Sandhini and Slama, Katarina and Ray, Alex and Schulman, John and
+               Hilton, Jacob and Kelton, Fraser and Miller, Luke and Simens, Maddie and
+               Askell, Amanda and Welinder, Peter and Christiano, Paul and Leike, Jan and
+               Lowe, Ryan},
+  title     = {Training Language Models to Follow Instructions with Human Feedback},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
+  month     = dec,
+  year      = {2022},
+  volume    = {35},
+  pages     = {27730--27744},
+  doi       = {10.48550/arXiv.2203.02155},
+  url       = {https://arxiv.org/abs/2203.02155},
 }
 
-@article{touvron2023llama2,
-  author  = {Touvron, Hugo and Martin, Louis and Stone, Kevin and Albert, Peter and
-             Almahairi, Amjad and Babaei, Yasmine and Bashlykov, Nikolay and others},
-  title   = {Llama 2: Open Foundation and Fine-Tuned Chat Models},
-  journal = {arXiv preprint arXiv:2307.09288},
-  year    = {2023},
-  url     = {https://arxiv.org/abs/2307.09288},
+@misc{touvron2023llama2,
+  author        = {Touvron, Hugo and Martin, Louis and Stone, Kevin and Albert, Peter and
+                   Almahairi, Amjad and Babaei, Yasmine and Bashlykov, Nikolay and Batra, Soumya and
+                   Bhargava, Prajjwal and Bhosale, Shruti and Bikel, Dan and Blecher, Lukas and
+                   Ferrer, Cristian Canton and Chen, Moya and Cucurull, Guillem and Esiobu, David and
+                   Fernandes, Jude and Fu, Jeremy and Fu, Wenyin and Fuller, Brian and Gao, Cynthia and
+                   Goswami, Vedanuj and Goyal, Naman and Hartshorn, Anthony and Hosseini, Saghar and
+                   Hou, Rui and Inan, Hakan and Kardas, Marcin and Kerkez, Viktor and Khabsa, Madian and
+                   Kloumann, Isabel and Korenev, Artem and Koura, Punit Singh and Lachaux, Marie-Anne and
+                   Lavril, Thibaut and Lee, Jenya and Liskovich, Diana and Lu, Yinghai and Mao, Yuning and
+                   Martinet, Xavier and Mihaylov, Todor and Mishra, Pushkar and Molybog, Igor and
+                   Nie, Yixin and Poulton, Andrew and Reizenstein, Jeremy and Rungta, Rashi and
+                   Saladi, Kalyan and Schelten, Alan and Silva, Ruan and Smith, Eric Michael and
+                   Subramanian, Ranjan and Tan, Xiaoqing Ellen and Tang, Binh and Taylor, Ross and
+                   Williams, Adina and Kuan, Jian Xiang and Xu, Puxin and Yan, Zheng and Zarov, Iliyan and
+                   Zhang, Yuchen and Fan, Angela and Kambadur, Melanie and Narang, Sharan and
+                   Rodriguez, Aurelien and Stojnic, Robert and Edunov, Sergey and Scialom, Thomas},
+  title         = {Llama 2: Open Foundation and Fine-Tuned Chat Models},
+  month         = jul,
+  year          = {2023},
+  eprint        = {2307.09288},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  doi           = {10.48550/arXiv.2307.09288},
+  url           = {https://arxiv.org/abs/2307.09288},
+}
+
+@inproceedings{karpukhin2020dpr,
+  author    = {Karpukhin, Vladimir and O{\u{g}}uz, Barlas and Min, Sewon and
+               Lewis, Patrick and Wu, Ledell and Edunov, Sergey and Chen, Danqi and
+               Yih, Wen-tau},
+  title     = {Dense Passage Retrieval for Open-Domain Question Answering},
+  booktitle = {Proceedings of the 2020 Conference on Empirical Methods in
+               Natural Language Processing (EMNLP)},
+  month     = nov,
+  year      = {2020},
+  pages     = {6769--6781},
+  doi       = {10.18653/v1/2020.emnlp-main.550},
+  url       = {https://arxiv.org/abs/2004.04906},
+}
+
+@inproceedings{lewis2020bart,
+  author    = {Lewis, Mike and Liu, Yinhan and Goyal, Naman and Ghazvininejad, Marjan and
+               Mohamed, Abdelrahman and Levy, Omer and Stoyanov, Veselin and Zettlemoyer, Luke},
+  title     = {{BART}: Denoising Sequence-to-Sequence Pre-training for Natural Language
+               Generation, Translation, and Comprehension},
+  booktitle = {Proceedings of the 58th Annual Meeting of the Association for
+               Computational Linguistics (ACL)},
+  month     = jul,
+  year      = {2020},
+  pages     = {7871--7880},
+  doi       = {10.18653/v1/2020.acl-main.703},
+  url       = {https://arxiv.org/abs/1910.13461},
+}
+
+@inproceedings{reimers2019sbert,
+  author    = {Reimers, Nils and Gurevych, Iryna},
+  title     = {Sentence-{BERT}: Sentence Embeddings using {Siamese} {BERT}-Networks},
+  booktitle = {Proceedings of the 2019 Conference on Empirical Methods in
+               Natural Language Processing (EMNLP)},
+  month     = nov,
+  year      = {2019},
+  pages     = {3982--3992},
+  doi       = {10.18653/v1/D19-1410},
+  url       = {https://arxiv.org/abs/1908.10084},
+}
+
+@misc{gao2023ragsurvey,
+  author        = {Gao, Yunfan and Xiong, Yun and Gao, Xinyu and Jia, Kangxiang and
+                   Pan, Jinliu and Bi, Yuxi and Dai, Yi and Sun, Jiawei and
+                   Wang, Meng and Wang, Haofen},
+  title         = {Retrieval-Augmented Generation for Large Language Models: {A} Survey},
+  month         = dec,
+  year          = {2023},
+  eprint        = {2312.10997},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  doi           = {10.48550/arXiv.2312.10997},
+  url           = {https://arxiv.org/abs/2312.10997},
+}
+
+@inproceedings{shao2023iterretgen,
+  author    = {Shao, Zhihong and Gong, Yeyun and Shen, Yelong and Huang, Minlie and
+               Duan, Nan and Chen, Weizhu},
+  title     = {Enhancing Retrieval-Augmented Large Language Models with Iterative
+               Retrieval-Generation Synergy},
+  booktitle = {Findings of the Association for Computational Linguistics: EMNLP 2023},
+  month     = dec,
+  year      = {2023},
+  pages     = {9248--9274},
+  url       = {https://arxiv.org/abs/2305.15294},
+}
+
+@inproceedings{jiang2023flare,
+  author    = {Jiang, Zhengbao and Xu, Frank F. and Gao, Luyu and Sun, Zhiqing and
+               Liu, Qian and Dwivedi-Yu, Jane and Yang, Yiming and Callan, Jamie and
+               Neubig, Graham},
+  title     = {Active Retrieval Augmented Generation},
+  booktitle = {Proceedings of the 2023 Conference on Empirical Methods in
+               Natural Language Processing (EMNLP)},
+  month     = dec,
+  year      = {2023},
+  pages     = {7969--7992},
+  url       = {https://arxiv.org/abs/2305.06983},
+}
+
+@inproceedings{asai2023selfrag,
+  author    = {Asai, Akari and Wu, Zeqiu and Wang, Yizhong and Sil, Avirup and
+               Hajishirzi, Hannaneh},
+  title     = {Self-{RAG}: Learning to Retrieve, Generate, and Critique through
+               Self-Reflection},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  month     = may,
+  year      = {2024},
+  url       = {https://arxiv.org/abs/2310.11511},
+}
+
+@misc{liu2022llamaindex,
+  author = {Liu, Jerry},
+  title  = {{LlamaIndex}},
+  year   = {2022},
+  url    = {https://github.com/jerryjliu/llama_index},
 }

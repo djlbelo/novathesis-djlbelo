@@ -230,6 +230,253 @@ where token consumption can scale three to five times per client without
 deliberate optimization~\cite{ouyang2022instructgpt}.
 
 %%------------------------------------------------------------
+%% SECTION: Retrieval-Augmented Generation
+%% Covers: foundational RAG architecture (Lewis 2020), the Naive/Advanced/
+%% Modular RAG taxonomy (Gao 2023), dense semantic retrieval with SBERT
+%% (Reimers 2019), and the mapping onto LlamaIndex.
+%%------------------------------------------------------------
+\section{Retrieval-Augmented Generation}
+\label{sec:rag}
+
+Large language models store factual knowledge implicitly within their parameters,
+an approach that introduces well-documented limitations: parametric knowledge is
+frozen at training time, cannot be transparently audited, and tends to produce
+hallucinations when queries exceed the model's training distribution~\cite{lewis2020rag}.
+Retrieval-Augmented Generation (RAG) addresses these limitations by coupling a
+generative model with a dynamic, non-parametric memory that can be queried,
+updated, and inspected at inference time. The following subsections trace the
+theoretical foundations of this paradigm, survey its subsequent architectural
+evolution, and ground the discussion in the dense retrieval machinery that makes
+scalable semantic search tractable in practice.
+
+% ------------------------------------------------------------
+\subsection{Foundational Architecture: Lewis et al.\ (2020)}
+\label{subsec:rag_foundation}
+
+% Presents the two-component RAG model (DPR retriever + BART generator),
+% the RAG-Sequence and RAG-Token marginalization strategies, and the
+% hot-swappable non-parametric memory property relevant to production.
+The canonical RAG formulation was introduced by Lewis et al.~\cite{lewis2020rag}, who
+proposed a general-purpose fine-tuning recipe for generative models endowed with
+access to an external non-parametric memory. The architecture decomposes into two
+principal components: (i)~a \emph{retriever} $p_\eta(z \mid x)$, implemented as
+a Dense Passage Retriever (DPR)~\cite{karpukhin2020dpr} whose bi-encoder
+architecture maps both queries and documents into a shared dense vector space via
+independent BERT encoders, and (ii)~a \emph{generator} $p_\theta(y_i \mid x, z,
+y_{1:i-1})$, implemented as BART-large~\cite{lewis2020bart}, which conditions its
+output sequence on the concatenation of the original query $x$ and retrieved
+passages $z$.
+
+Formally, the top-$K$ passages are selected by solving a Maximum Inner Product
+Search (MIPS) problem over a pre-indexed Wikipedia corpus of 21~million
+100-word chunks:
+%
+\begin{equation}
+    p_\eta(z \mid x) \;\propto\; \exp\!\left( d(z)^\top q(x) \right),
+    \quad d(z) = \mathrm{BERT}_d(z),\; q(x) = \mathrm{BERT}_q(x).
+\end{equation}
+%
+Two marginalization strategies over the latent document variable $z$ are
+proposed. In \emph{RAG-Sequence}, a single retrieved document is assumed
+responsible for the entire output sequence:
+%
+\begin{equation}
+    p_{\mathrm{RAG\text{-}Seq}}(y \mid x)
+    \;\approx\;
+    \sum_{z \,\in\, \mathrm{top\text{-}}k}
+    p_\eta(z \mid x)\;
+    \prod_{i}^{N} p_\theta(y_i \mid x, z, y_{1:i-1}).
+\end{equation}
+%
+In \emph{RAG-Token}, a distinct document may be selected at each generation step,
+enabling the generator to synthesize content from multiple retrieved passages:
+%
+\begin{equation}
+    p_{\mathrm{RAG\text{-}Token}}(y \mid x)
+    \;\approx\;
+    \prod_{i}^{N}
+    \sum_{z \,\in\, \mathrm{top\text{-}}k}
+    p_\eta(z \mid x)\;
+    p_\theta(y_i \mid x, z, y_{1:i-1}).
+\end{equation}
+%
+The retriever and generator are trained end-to-end via minimization of the
+negative marginal log-likelihood $\sum_j -\log p(y_j \mid x_j)$, without any
+direct supervision on which documents should be retrieved. Crucially, the
+document encoder and its FAISS index are kept frozen during fine-tuning; only the
+query encoder and the BART generator are updated, substantially reducing
+computational cost.
+
+Empirically, RAG established state-of-the-art results on three open-domain
+question answering benchmarks---Natural Questions (44.5 EM), WebQuestions (45.2
+EM), and CuratedTrec (52.2 EM)---outperforming both purely parametric seq2seq
+baselines (e.g.,\ T5-11B) and task-specific retrieve-and-extract systems (e.g.,\
+DPR-based readers)~\cite{lewis2020rag}. For generative tasks, human evaluators
+rated RAG outputs as more factual than a BART baseline in 42.7\% of Jeopardy
+question generation trials, compared to only 7.1\% in which BART was judged
+superior. An index hot-swapping experiment further demonstrated that updating the
+non-parametric memory by replacing the document index is sufficient to update
+the model's world knowledge without any retraining, a property of practical
+significance for production deployments.
+
+% ------------------------------------------------------------
+\subsection{Architectural Evolution: Naive, Advanced, and Modular RAG}
+\label{subsec:rag_survey}
+
+% Applies the three-tier taxonomy of Gao et al. (2023): Naive RAG failure modes,
+% Advanced RAG pre/post-retrieval interventions, and Modular RAG composable
+% pipelines (ITER-RETGEN, FLARE, Self-RAG). Establishes RAG vs. fine-tuning tradeoff.
+Gao et al.~\cite{gao2023ragsurvey} systematize the rapid evolution of RAG methods into a
+three-tier taxonomy, providing a structural lens through which the design of
+contemporary systems can be evaluated.
+
+\paragraph{Naive RAG.}
+The earliest post-ChatGPT RAG implementations follow a minimal
+\emph{Retrieve-then-Read} pipeline consisting of three sequential steps:
+(1)~\emph{indexing}, in which raw documents are chunked, encoded via an embedding
+model, and stored in a vector database; (2)~\emph{retrieval}, in which the top-$K$
+chunks most similar to the user query are identified via cosine similarity over
+dense embeddings; and (3)~\emph{generation}, in which the query and retrieved
+chunks are concatenated into a prompt supplied to the language model~\cite{gao2023ragsurvey}.
+While effective in simple scenarios, Naive RAG exhibits well-characterized
+failure modes: low retrieval precision due to semantic gaps between queries and
+documents, context window saturation from uninformative passages, and
+hallucinations that arise when the generator defaults to parametric knowledge in
+the presence of noisy retrieved context.
+
+\paragraph{Advanced RAG.}
+Advanced RAG introduces targeted interventions at both the pre-retrieval and
+post-retrieval stages to address the precision and coherence limitations of the
+naive approach~\cite{gao2023ragsurvey}. Pre-retrieval strategies include query
+rewriting, query expansion into sub-questions, and the construction of
+\emph{Hypothetical Document Embeddings} (HyDE), in which the model first
+generates a hypothetical answer and then uses its embedding to retrieve
+semantically closer passages. Post-retrieval strategies include cross-encoder
+reranking to elevate the most relevant passages and context compression to
+eliminate redundant or off-topic content prior to generation. Indexing
+enhancements---such as sliding-window chunking, fine-grained segmentation, and
+metadata attachment---further improve retrieval recall and temporal
+awareness. These modifications maintain the linear Retrieve-then-Read structure
+of Naive RAG while substantially improving end-to-end generation quality.
+
+\paragraph{Modular RAG.}
+Modular RAG supersedes the fixed-pipeline paradigm by decomposing the system into
+independently composable functional modules: \emph{Search}, \emph{Memory},
+\emph{Routing}, \emph{Predict}, and \emph{Task Adapter}~\cite{gao2023ragsurvey}.
+This architecture supports non-sequential execution patterns, including iterative
+retrieval loops (e.g.,\ ITER-RETGEN~\cite{shao2023iterretgen}), adaptive
+retrieval triggered by generation uncertainty (e.g.,\ FLARE~\cite{jiang2023flare}),
+and self-reflective retrieval with token-level reflection signals
+(e.g.,\ Self-RAG~\cite{asai2023selfrag}). The modular design also enables
+seamless integration with complementary techniques---fine-tuning the retriever,
+fine-tuning the generator, or training both collaboratively---without requiring
+architectural changes to the pipeline. Gao et al.~\cite{gao2023ragsurvey} position Modular
+RAG as the current frontier, noting that its flexibility allows task-specific
+orchestration patterns that static pipelines cannot accommodate.
+
+A practical implication of this taxonomy is that RAG and fine-tuning are not
+mutually exclusive. RAG excels in dynamic environments where knowledge must be
+updated frequently and interpretable provenance is required, whereas fine-tuning
+is better suited for scenarios demanding stylistic adaptation or the
+internalization of domain-specific reasoning patterns. In knowledge-intensive
+tasks, Gao et al.~\cite{gao2023ragsurvey} report that RAG consistently outperforms
+unsupervised fine-tuning, both on knowledge encountered during pre-training and on
+entirely novel factual information.
+
+% ------------------------------------------------------------
+\subsection{Dense Semantic Retrieval: Sentence-BERT}
+\label{subsec:sbert}
+
+% Motivates SBERT over vanilla BERT for large-scale semantic search
+% (O(n^2) → O(1) lookup); describes Siamese/triplet architecture and the
+% three training objectives; connects to embedding models used in RAG pipelines.
+The retrieval component of any RAG pipeline depends critically on the quality and
+computational tractability of sentence-level embeddings. Vanilla BERT
+representations are unsuitable for large-scale semantic search: because BERT
+processes sentence pairs jointly through a cross-attention encoder, identifying
+the most similar pair in a corpus of $n$~sentences requires $\mathcal{O}(n^2)$
+inference passes, which Reimers and Gurevych~\cite{reimers2019sbert} report as approximately 65~hours
+for $n = 10{,}000$ sentences. Furthermore, averaging BERT token embeddings or
+using the \texttt{[CLS]} token output yields representations that perform worse
+on semantic textual similarity (STS) tasks than simple GloVe embeddings, owing to
+BERT's lack of explicit metric learning for sentence-level geometry.
+
+Reimers and Gurevych~\cite{reimers2019sbert} address these limitations by introducing
+\emph{Sentence-BERT} (SBERT), a modification of BERT using Siamese and triplet
+network structures to produce fixed-size, semantically meaningful sentence
+embeddings amenable to efficient cosine-similarity comparison. The architecture
+passes each sentence independently through a shared BERT encoder, then applies
+mean-pooling over the output token embeddings to obtain a single vector
+representation $\mathbf{u}$ and $\mathbf{v}$ for a sentence pair. Three training
+objectives are supported depending on the available supervision signal:
+%
+\begin{itemize}
+    \item \textbf{Classification objective} (for NLI corpora): a softmax
+    classifier over the concatenation $[\mathbf{u};\, \mathbf{v};\,
+    |\mathbf{u} - \mathbf{v}|]$ trained to predict entailment, contradiction, or
+    neutral labels.
+    \item \textbf{Regression objective} (for STS corpora): cosine-similarity
+    between $\mathbf{u}$ and $\mathbf{v}$ optimized with mean-squared error
+    against human-annotated similarity scores.
+    \item \textbf{Triplet objective}: a margin-based ranking loss that ensures the
+    anchor embedding $\mathbf{a}$ is closer to a positive $\mathbf{p}$ than to a
+    negative $\mathbf{n}$ by a margin $\epsilon$:
+    %
+    \begin{equation}
+        \mathcal{L}_{\mathrm{triplet}}
+        = \max\!\left(
+            \|\mathbf{a} - \mathbf{p}\| - \|\mathbf{a} - \mathbf{n}\| + \epsilon,\;0
+          \right).
+    \end{equation}
+\end{itemize}
+%
+The Siamese design decouples encoding from comparison: document embeddings are
+computed once at indexing time and stored in a vector index, reducing inference at
+query time to a single forward pass followed by a nearest-neighbor lookup. This
+reduces the 65-hour pairwise comparison to approximately 5 seconds for a
+10,000-sentence corpus, while preserving---or improving upon---BERT's accuracy on
+STS benchmarks~\cite{reimers2019sbert}. On the STS tasks evaluated, SBERT
+achieves an improvement of 11~Spearman correlation points over InferSent and
+5~points over Universal Sentence Encoder.
+
+% ------------------------------------------------------------
+\subsection{Connection to LlamaIndex}
+\label{subsec:rag_llamaindex}
+
+% Maps the theoretical RAG contributions above onto LlamaIndex abstractions:
+% ingestion → SentenceSplitter, embedding → SBERT-compatible models,
+% retrieval → VectorStoreIndex MIPS, advanced patterns → RouterQueryEngine
+% and ReActAgent. Positions LlamaIndex as a production-grade Modular RAG system.
+The theoretical contributions reviewed above map directly onto the abstractions
+provided by LlamaIndex, the framework employed in this work. LlamaIndex
+operationalizes the RAG pipeline of Lewis et al.~\cite{lewis2020rag} through a modular
+architecture that cleanly separates ingestion, indexing, retrieval, and
+synthesis~\cite{liu2022llamaindex}. During the \emph{ingestion} stage,
+\texttt{SimpleDirectoryReader} loads raw documents, which are subsequently
+segmented by \texttt{SentenceSplitter} into overlapping chunks---a direct
+implementation of the chunking strategies discussed by Gao et al.~\cite{gao2023ragsurvey}
+for Advanced RAG. The resulting nodes are encoded via a configurable embedding
+model (\texttt{Settings.embed\_model}), which defaults to OpenAI's
+\texttt{text-embedding-3-small} but is readily substituted with any
+SBERT-compatible model from the HuggingFace ecosystem (e.g.,\
+\texttt{BAAI/bge-small-en-v1.5}), whose architecture descends directly from the
+Siamese network paradigm of Reimers and Gurevych~\cite{reimers2019sbert}.
+
+At query time, LlamaIndex's \texttt{VectorStoreIndex} retrieves the top-$K$ most
+relevant nodes via cosine similarity---the same MIPS formulation as DPR
+in~\cite{lewis2020rag}---and passes the retrieved context together with the user
+query to the configured language model for response synthesis. The framework
+further exposes advanced retrieval patterns consistent with the Modular RAG
+taxonomy of Gao et al.~\cite{gao2023ragsurvey}: \texttt{RouterQueryEngine} implements
+semantic routing to multiple sub-indexes; post-retrieval reranking modules (e.g.,\
+\texttt{SentenceTransformerRerank}) apply cross-encoder scoring to improve
+precision; and iterative retrieval agents can be composed from LlamaIndex's
+\texttt{ReActAgent} infrastructure. In this sense, LlamaIndex provides a
+production-grade instantiation of the entire RAG design space surveyed by
+Gao et al.~\cite{gao2023ragsurvey}, grounded in the dense retrieval foundations established
+by Lewis et al.~\cite{lewis2020rag} and Reimers and Gurevych~\cite{reimers2019sbert}.
+
+%%------------------------------------------------------------
 %% SECTION: Related Work
 %%------------------------------------------------------------
 \section{Related Work}
