@@ -34,10 +34,25 @@ representations of words from large unlabelled corpora. The model is trained
 through a self-supervised prediction task using one of two architectures:
 Continuous Bag-of-Words (CBOW), which predicts a target word from its
 surrounding context, or Skip-gram, which performs the inverse prediction.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/skipgram-architecture}
+    \caption{CBOW and Skip-gram architectures of the Word2Vec framework. Adapted from~\cite{mikolov2013word2vec}.}
+    \label{fig:skipgram}
+\end{figure}
+
 The resulting word embeddings encode both syntactic and semantic structure
 in a dense vector space, enabling linear algebraic operations over meaning ---
 most notably the well-known relationship \(\vec{king} - \vec{man} + \vec{woman}
 \approx \vec{queen}\).
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/king-queen-embedding}
+    \caption{Word vector space learned by Word2Vec, illustrating semantic analogies such as $\vec{king} - \vec{man} + \vec{woman} \approx \vec{queen}$. Adapted from~\cite{mikolov2013word2vec}.}
+    \label{fig:word2vec}
+\end{figure}
 
 The significance of Word2Vec extends well beyond the paper itself. By
 demonstrating that semantic similarity can be captured as geometric proximity
@@ -68,6 +83,13 @@ and key projections:
 \right)V
 \]
 
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/scale-dot-multi-head}
+    \caption{Scaled Dot-Product Attention (left) and Multi-Head Attention (right). Adapted from~\cite{vaswani2017attention}.}
+    \label{fig:attention}
+\end{figure}
+
 By running multiple such attention operations in parallel --- Multi-Head
 Attention --- the model learns to simultaneously attend to different types of
 relationships across the input, such as syntactic dependencies and semantic
@@ -76,6 +98,13 @@ embeddings to compensate for the architecture's inherent permutation
 invariance. The resulting model achieved 28.4 BLEU on the WMT 2014
 English-to-German translation benchmark, surpassing all prior approaches while
 requiring a fraction of the training compute~\cite{vaswani2017attention}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.50\textwidth]{5-Figures/Chapter2/transformer}
+    \caption{Full Transformer architecture with encoder and decoder stacks. Adapted from~\cite{vaswani2017attention}.}
+    \label{fig:transformer}
+\end{figure}
 
 The Transformer's parallelism over sequence positions unlocked a new scaling
 regime for neural language models. Architectures derived from it --- most
@@ -300,6 +329,13 @@ enabling the generator to synthesize content from multiple retrieved passages:
     p_\theta(y_i \mid x, z, y_{1:i-1}).
 \end{equation}
 %
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/rag-retriever-BART-MIPS}
+    \caption{End-to-end RAG architecture combining a DPR retriever with a BART-large generator. Adapted from~\cite{lewis2020rag}.}
+    \label{fig:rag-architecture}
+\end{figure}
+
 The retriever and generator are trained end-to-end via minimization of the
 negative marginal log-likelihood $\sum_j -\log p(y_j \mid x_j)$, without any
 direct supervision on which documents should be retrieved. Crucially, the
@@ -329,6 +365,13 @@ significance for production deployments.
 Gao et al.~\cite{gao2023ragsurvey} systematize the rapid evolution of RAG methods into a
 three-tier taxonomy, providing a structural lens through which the design of
 contemporary systems can be evaluated.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/naive-advanced-modular}
+    \caption{Three-tier RAG taxonomy: Naive, Advanced, and Modular RAG. Adapted from~\cite{gao2023ragsurvey}.}
+    \label{fig:rag-taxonomy}
+\end{figure}
 
 \paragraph{Naive RAG.}
 The earliest post-ChatGPT RAG implementations follow a minimal
@@ -404,8 +447,15 @@ BERT's lack of explicit metric learning for sentence-level geometry.
 Reimers and Gurevych~\cite{reimers2019sbert} address these limitations by introducing
 \emph{Sentence-BERT} (SBERT), a modification of BERT using Siamese and triplet
 network structures to produce fixed-size, semantically meaningful sentence
-embeddings amenable to efficient cosine-similarity comparison. The architecture
-passes each sentence independently through a shared BERT encoder, then applies
+embeddings amenable to efficient cosine-similarity comparison.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/sbert-network-anchor-positive-negative}
+    \caption{SBERT Siamese network architecture with triplet loss objective. Adapted from~\cite{reimers2019sbert}.}
+    \label{fig:sbert-triplet}
+\end{figure} The architecture
+The architecture passes each sentence independently through a shared BERT encoder, then applies
 mean-pooling over the output token embeddings to obtain a single vector
 representation $\mathbf{u}$ and $\mathbf{v}$ for a sentence pair. Three training
 objectives are supported depending on the available supervision signal:
@@ -418,6 +468,14 @@ objectives are supported depending on the available supervision signal:
     \item \textbf{Regression objective} (for STS corpora): cosine-similarity
     between $\mathbf{u}$ and $\mathbf{v}$ optimized with mean-squared error
     against human-annotated similarity scores.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/sbert-class-regress}
+    \caption{Classification and regression training objectives of SBERT. Adapted from~\cite{reimers2019sbert}.}
+    \label{fig:sbert-objectives}
+\end{figure}
+
     \item \textbf{Triplet objective}: a margin-based ranking loss that ensures the
     anchor embedding $\mathbf{a}$ is closer to a positive $\mathbf{p}$ than to a
     negative $\mathbf{n}$ by a margin $\epsilon$:
