@@ -38,7 +38,7 @@ surrounding context, or Skip-gram, which performs the inverse prediction.
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/skipgram-architecture}
-    \caption{CBOW and Skip-gram architectures of the Word2Vec framework. Adapted from Mikolov et al.\ (2013).}
+    \caption{CBOW and Skip-gram architectures of the Word2Vec framework. Adapted from~\cite{mikolov2013word2vec}.}
     \label{fig:skipgram}
 \end{figure}
 
@@ -50,7 +50,7 @@ most notably the well-known relationship \(\vec{king} - \vec{man} + \vec{woman}
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/king-queen-embedding}
-    \caption{Word vector space learned by Word2Vec, illustrating semantic analogies such as $\vec{king} - \vec{man} + \vec{woman} \approx \vec{queen}$. Adapted from Mikolov et al.\ (2013).}
+    \caption{Word vector space learned by Word2Vec, illustrating semantic analogies such as $\vec{king} - \vec{man} + \vec{woman} \approx \vec{queen}$. Adapted from~\cite{mikolov2013word2vec}.}
     \label{fig:word2vec}
 \end{figure}
 
@@ -86,7 +86,7 @@ and key projections:
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/scale-dot-multi-head}
-    \caption{Scaled Dot-Product Attention (left) and Multi-Head Attention (right). Adapted from Vaswani et al.\ (2017).}
+    \caption{Scaled Dot-Product Attention (left) and Multi-Head Attention (right). Adapted from~\cite{vaswani2017attention}.}
     \label{fig:attention}
 \end{figure}
 
@@ -102,7 +102,7 @@ requiring a fraction of the training compute~\cite{vaswani2017attention}.
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/transformer}
-    \caption{Full Transformer architecture with encoder and decoder stacks. Adapted from Vaswani et al.\ (2017).}
+    \caption{Full Transformer architecture with encoder and decoder stacks. Adapted from~\cite{vaswani2017attention}.}
     \label{fig:transformer}
 \end{figure}
 
@@ -332,7 +332,7 @@ enabling the generator to synthesize content from multiple retrieved passages:
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/rag-retriever-BART-MIPS}
-    \caption{End-to-end RAG architecture combining a DPR retriever with a BART-large generator. Adapted from Lewis et al.\ (2020).}
+    \caption{End-to-end RAG architecture combining a DPR retriever with a BART-large generator. Adapted from~\cite{lewis2020rag}.}
     \label{fig:rag-architecture}
 \end{figure}
 
@@ -369,7 +369,7 @@ contemporary systems can be evaluated.
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/naive-advanced-modular}
-    \caption{Three-tier RAG taxonomy: Naive, Advanced, and Modular RAG. Adapted from Gao et al.\ (2023).}
+    \caption{Three-tier RAG taxonomy: Naive, Advanced, and Modular RAG. Adapted from~\cite{gao2023ragsurvey}.}
     \label{fig:rag-taxonomy}
 \end{figure}
 
@@ -452,7 +452,7 @@ embeddings amenable to efficient cosine-similarity comparison.
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/sbert-network-anchor-positive-negative}
-    \caption{SBERT Siamese network architecture with triplet loss objective. Adapted from Reimers and Gurevych (2019).}
+    \caption{SBERT Siamese network architecture with triplet loss objective. Adapted from~\cite{reimers2019sbert}.}
     \label{fig:sbert-triplet}
 \end{figure} The architecture
 The architecture passes each sentence independently through a shared BERT encoder, then applies
@@ -472,7 +472,7 @@ objectives are supported depending on the available supervision signal:
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/sbert-class-regress}
-    \caption{Classification and regression training objectives of SBERT. Adapted from Reimers and Gurevych (2019).}
+    \caption{Classification and regression training objectives of SBERT. Adapted from~\cite{reimers2019sbert}.}
     \label{fig:sbert-objectives}
 \end{figure}
 
