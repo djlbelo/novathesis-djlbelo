@@ -256,7 +256,7 @@ scalable semantic search tractable in practice.
 % Presents the two-component RAG model (DPR retriever + BART generator),
 % the RAG-Sequence and RAG-Token marginalization strategies, and the
 % hot-swappable non-parametric memory property relevant to production.
-The canonical RAG formulation was introduced by \citet{lewis2020rag}, who
+The canonical RAG formulation was introduced by Lewis et al.~\cite{lewis2020rag}, who
 proposed a general-purpose fine-tuning recipe for generative models endowed with
 access to an external non-parametric memory. The architecture decomposes into two
 principal components: (i)~a \emph{retriever} $p_\eta(z \mid x)$, implemented as
@@ -326,7 +326,7 @@ significance for production deployments.
 % Applies the three-tier taxonomy of Gao et al. (2023): Naive RAG failure modes,
 % Advanced RAG pre/post-retrieval interventions, and Modular RAG composable
 % pipelines (ITER-RETGEN, FLARE, Self-RAG). Establishes RAG vs. fine-tuning tradeoff.
-\citet{gao2023ragsurvey} systematize the rapid evolution of RAG methods into a
+Gao et al.~\cite{gao2023ragsurvey} systematize the rapid evolution of RAG methods into a
 three-tier taxonomy, providing a structural lens through which the design of
 contemporary systems can be evaluated.
 
@@ -370,7 +370,7 @@ and self-reflective retrieval with token-level reflection signals
 (e.g.,\ Self-RAG~\cite{asai2023selfrag}). The modular design also enables
 seamless integration with complementary techniques---fine-tuning the retriever,
 fine-tuning the generator, or training both collaboratively---without requiring
-architectural changes to the pipeline. \citet{gao2023ragsurvey} position Modular
+architectural changes to the pipeline. Gao et al.~\cite{gao2023ragsurvey} position Modular
 RAG as the current frontier, noting that its flexibility allows task-specific
 orchestration patterns that static pipelines cannot accommodate.
 
@@ -379,7 +379,7 @@ mutually exclusive. RAG excels in dynamic environments where knowledge must be
 updated frequently and interpretable provenance is required, whereas fine-tuning
 is better suited for scenarios demanding stylistic adaptation or the
 internalization of domain-specific reasoning patterns. In knowledge-intensive
-tasks, \citet{gao2023ragsurvey} report that RAG consistently outperforms
+tasks, Gao et al.~\cite{gao2023ragsurvey} report that RAG consistently outperforms
 unsupervised fine-tuning, both on knowledge encountered during pre-training and on
 entirely novel factual information.
 
@@ -395,13 +395,13 @@ computational tractability of sentence-level embeddings. Vanilla BERT
 representations are unsuitable for large-scale semantic search: because BERT
 processes sentence pairs jointly through a cross-attention encoder, identifying
 the most similar pair in a corpus of $n$~sentences requires $\mathcal{O}(n^2)$
-inference passes, which \citet{reimers2019sbert} report as approximately 65~hours
+inference passes, which Reimers and Gurevych~\cite{reimers2019sbert} report as approximately 65~hours
 for $n = 10{,}000$ sentences. Furthermore, averaging BERT token embeddings or
 using the \texttt{[CLS]} token output yields representations that perform worse
 on semantic textual similarity (STS) tasks than simple GloVe embeddings, owing to
 BERT's lack of explicit metric learning for sentence-level geometry.
 
-\citet{reimers2019sbert} address these limitations by introducing
+Reimers and Gurevych~\cite{reimers2019sbert} address these limitations by introducing
 \emph{Sentence-BERT} (SBERT), a modification of BERT using Siamese and triplet
 network structures to produce fixed-size, semantically meaningful sentence
 embeddings amenable to efficient cosine-similarity comparison. The architecture
@@ -449,32 +449,32 @@ achieves an improvement of 11~Spearman correlation points over InferSent and
 % and ReActAgent. Positions LlamaIndex as a production-grade Modular RAG system.
 The theoretical contributions reviewed above map directly onto the abstractions
 provided by LlamaIndex, the framework employed in this work. LlamaIndex
-operationalizes the RAG pipeline of \citet{lewis2020rag} through a modular
+operationalizes the RAG pipeline of Lewis et al.~\cite{lewis2020rag} through a modular
 architecture that cleanly separates ingestion, indexing, retrieval, and
 synthesis~\cite{liu2022llamaindex}. During the \emph{ingestion} stage,
 \texttt{SimpleDirectoryReader} loads raw documents, which are subsequently
 segmented by \texttt{SentenceSplitter} into overlapping chunks---a direct
-implementation of the chunking strategies discussed by \citet{gao2023ragsurvey}
+implementation of the chunking strategies discussed by Gao et al.~\cite{gao2023ragsurvey}
 for Advanced RAG. The resulting nodes are encoded via a configurable embedding
 model (\texttt{Settings.embed\_model}), which defaults to OpenAI's
 \texttt{text-embedding-3-small} but is readily substituted with any
 SBERT-compatible model from the HuggingFace ecosystem (e.g.,\
 \texttt{BAAI/bge-small-en-v1.5}), whose architecture descends directly from the
-Siamese network paradigm of \citet{reimers2019sbert}.
+Siamese network paradigm of Reimers and Gurevych~\cite{reimers2019sbert}.
 
 At query time, LlamaIndex's \texttt{VectorStoreIndex} retrieves the top-$K$ most
-relevant nodes via cosine similarity---the same MIPS formulation as DPR in
-\citet{lewis2020rag}---and passes the retrieved context together with the user
+relevant nodes via cosine similarity---the same MIPS formulation as DPR
+in~\cite{lewis2020rag}---and passes the retrieved context together with the user
 query to the configured language model for response synthesis. The framework
 further exposes advanced retrieval patterns consistent with the Modular RAG
-taxonomy of \citet{gao2023ragsurvey}: \texttt{RouterQueryEngine} implements
+taxonomy of Gao et al.~\cite{gao2023ragsurvey}: \texttt{RouterQueryEngine} implements
 semantic routing to multiple sub-indexes; post-retrieval reranking modules (e.g.,\
 \texttt{SentenceTransformerRerank}) apply cross-encoder scoring to improve
 precision; and iterative retrieval agents can be composed from LlamaIndex's
 \texttt{ReActAgent} infrastructure. In this sense, LlamaIndex provides a
 production-grade instantiation of the entire RAG design space surveyed by
-\citet{gao2023ragsurvey}, grounded in the dense retrieval foundations established
-by \citet{lewis2020rag} and \citet{reimers2019sbert}.
+Gao et al.~\cite{gao2023ragsurvey}, grounded in the dense retrieval foundations established
+by Lewis et al.~\cite{lewis2020rag} and Reimers and Gurevych~\cite{reimers2019sbert}.
 
 %%------------------------------------------------------------
 %% SECTION: Related Work
