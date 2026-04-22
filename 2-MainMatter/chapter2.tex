@@ -535,13 +535,156 @@ Gao et al.~\cite{gao2023ragsurvey}, grounded in the dense retrieval foundations 
 by Lewis et al.~\cite{lewis2020rag} and Reimers and Gurevych~\cite{reimers2019sbert}.
 
 %%------------------------------------------------------------
-%% SECTION: Related Work
+%% SECTION: Frameworks, MCP and Maestro
 %%------------------------------------------------------------
-\section{Related Work}
-\label{sec:related-work}
+\section{Frameworks, MCP and Maestro}
+\label{sec:orchestration}
 
-% TODO: Compare and contrast existing work with your approach.
-% Organise by sub-topic if appropriate.
+The foundations established in the preceding sections---dense vector
+representations, attention-based language models, retrieval-augmented
+generation, and dense semantic retrieval---describe the \emph{components} of a
+modern GenAI system. What they do not describe is how those components are
+composed, governed, and operated at production scale. This section addresses
+that gap across three layers of increasing practical specificity.
+
+\subsection{LLM Orchestration Frameworks}
+\label{sec:orchestration-frameworks}
+
+The emergence of capable large language models created an immediate engineering
+challenge: how to compose LLMs with external tools, persistent memory, and
+retrieval systems into coherent, repeatable pipelines. LangChain~\cite{chase2022langchain}
+addressed this challenge by introducing a layered abstraction model built around
+three core primitives. A \textit{chain} is a composable sequence of calls---to an
+LLM, a retriever, a tool, or another chain---that can be assembled declaratively
+and reused across applications. A \textit{tool} is any callable capability exposed
+to the model with a name, a natural-language description, and a typed input
+schema; the LLM uses these descriptions to decide, at runtime, which tool to
+invoke and with what arguments. \textit{Memory} modules attach conversational
+context to any chain, enabling stateful interactions across multiple turns. Taken
+together, these primitives define what has become the dominant orchestration
+pattern in the field: a model-centric loop in which the LLM acts as a reasoning
+engine that selects and sequences external capabilities.
+
+The theoretical foundation for this loop was established independently by
+\citeauthor{yao2022react}~\cite{yao2022react}, who proposed the \textsc{ReAct}
+paradigm---an acronym for \textit{Reason + Act}. Rather than treating chain-of-thought
+reasoning and tool use as separate concerns, \textsc{ReAct} interleaves them into
+a single iterative cycle: the model emits a \textit{Thought} (an explicit
+reasoning step), selects an \textit{Action} (a tool call), receives an
+\textit{Observation} (the tool's output), and repeats until a terminal condition
+is satisfied. Evaluated on multi-step knowledge-intensive tasks---including
+HotpotQA, FEVER, ALFWorld, and WebShop---\textsc{ReAct} outperformed both
+chain-of-thought prompting alone and action-only baselines, demonstrating that
+the tight coupling of reasoning and acting is essential for robust agent
+behavior~\cite{yao2022react}. This loop is the intellectual ancestor of every
+agent executor in subsequent frameworks, including LangChain's
+\texttt{AgentExecutor}, and it directly informs the orchestration design of the
+system examined in this work.
+
+\subsection{Model Context Protocol}
+\label{sec:mcp}
+
+A persistent weakness of the orchestration paradigm described above is the
+absence of a standard interface between agents and the external systems they
+invoke. In practice, each integration is bespoke: a tool written for LangChain is
+not directly consumable by a different agent framework, and a function registered
+for OpenAI's function-calling API is invisible to a Claude-based agent. This
+$N \times M$ integration problem---$N$ agent frameworks multiplied by $M$ external
+services---generates duplicated adapter code, inconsistent error handling, and
+fragile dependency chains that impede both development velocity and
+maintainability~\cite{anthropic2024mcp}.
+
+The Model Context Protocol (MCP), introduced by Anthropic in
+2024~\cite{anthropic2024mcp} and specified in full at the canonical reference
+documentation~\cite{modelcontextprotocol2024}, addresses this problem by defining
+an open, transport-agnostic protocol that standardizes how LLM-based hosts expose
+and consume external capabilities. The protocol organizes participants into three
+roles. An \textit{MCP Host} is the application embedding the LLM---a development
+environment, a chat interface, or a custom agent runtime. An \textit{MCP Client}
+is the component within the host that manages connections to one or more servers.
+An \textit{MCP Server} is a lightweight process that exposes a bounded set of
+capabilities over JSON-RPC~2.0, using one of two transport mechanisms: standard
+I/O for local processes, or HTTP with Server-Sent Events for remote
+deployments~\cite{modelcontextprotocol2024}. Capabilities are organized into
+three first-class primitives: \textit{Tools}---functions that the model may invoke
+with structured arguments, analogous to LangChain tools but protocol-defined;
+\textit{Resources}---read-only data artifacts such as file contents, database
+schemas, or live API responses, exposed for model consumption without
+side-effects; and \textit{Prompts}---parameterized prompt templates that servers
+can offer for reuse~\cite{anthropic2024mcp, modelcontextprotocol2024}.
+
+The distinction between MCP and vendor-specific function calling is substantive.
+OpenAI's function-calling mechanism, for example, is stateless, scoped to a
+single model provider, and requires the host application to manage all
+serialization, discovery, and transport concerns. MCP, by contrast, is stateful
+at the protocol level, provider-agnostic, and supports dynamic capability
+discovery: a client can query any MCP server for its current tool and resource
+catalog without prior knowledge of the server's implementation. The consequence
+is a reduction from $N \times M$ to $N + M$ integration surface---any
+MCP-compliant host can interoperate with any MCP-compliant server, regardless of
+the LLM or framework in use. This interoperability property is directly relevant
+to multi-cloud enterprise deployments, where the ability to expose heterogeneous
+data services---across Azure, AWS, and GCP---through a single protocol layer has
+significant implications for both governance and maintainability.
+
+\subsection{Enterprise GenAI Frameworks: Maestro in Context}
+\label{sec:maestro}
+
+Research prototypes built on frameworks such as LangChain and paradigms such as
+\textsc{ReAct} operate under a set of assumptions that enterprise production
+environments do not share. In a production deployment serving multiple tenants
+across organizational units, correctness and capability are necessary but
+insufficient conditions. The system must additionally satisfy requirements for
+identity-based access control, secret management, encryption at rest and in
+transit, cost observability at the token and model level, multi-tenancy isolation,
+deployment portability across cloud providers, and operational reliability under
+variable load---none of which appear as first-class concerns in the
+orchestration literature reviewed above. Meeting these requirements demands an
+architectural discipline that goes beyond assembling chains and tools: it
+requires a governed platform in which each component is independently deployable,
+swappable without contract changes, and instrumented for both operational
+monitoring and audit compliance.
+
+The Maestro GenAI Framework, developed by Closer Consulting, represents a
+practitioner response to precisely this gap~\cite{closer2025maestro}. Designed
+and validated across production deployments in the energy, healthcare, financial,
+and pharmaceutical sectors, Maestro is a multi-repository, container-native
+microservices platform whose architecture decomposes the RAG pipeline into
+independently governed services. The \textit{LLM microservice} acts as a
+provider-agnostic gateway that routes generation requests to Azure OpenAI
+(GPT-4o, GPT-4o-mini), OpenAI, Azure AI Services (Mistral-Nemo, DeepSeek-R1),
+and Google Gemini, exposing a stable contract regardless of the underlying model.
+The \textit{orchestrator} (chatbot-backend) implements the \textsc{ReAct}-derived
+retrieval-augmented generation loop---history retrieval, hybrid vector search,
+per-chunk relevance filtering, prompt assembly, and LLM invocation---as a FastAPI
+service backed by LangChain. The \textit{vector database service} encapsulates
+document ingestion, chunking, embedding via \texttt{text-embedding-ada-002}, and
+hybrid kNN+BM25 retrieval over MongoDB Atlas. The \textit{datastore microservice}
+provides a provider-agnostic persistence layer over Azure Cosmos~DB and MongoDB,
+covering chat history, feedback, and document metadata. A \textit{guardrails
+microservice} implements PII detection using Microsoft Presidio for
+Portuguese-language inputs. Two \textit{frontend surfaces}---a Streamlit chatbot
+with Microsoft Entra~ID authentication and an Angular back-office for prompt and
+question management---complete the user-facing layer. Infrastructure is managed
+via OpenTofu targeting Azure, and observability is implemented through
+OpenTelemetry with Azure Monitor as the backend. In production, the framework has
+demonstrated measurable impact at scale: one deployment serving over~600 daily
+active users with 4,000 daily interactions across five embedded LLM models, and
+another achieving 83\% question-answering accuracy over a corpus of 2,907 indexed
+legal documents~\cite{closer2025maestro}.
+
+In spite of this production maturity, a systematic analysis of the framework's
+current implementation reveals a set of structural limitations that constrain its
+evolution along three dimensions: the absence of a standardized tool-exposure
+protocol---each microservice is reachable only through bespoke REST endpoints,
+with no dynamic capability discovery and no interoperability with external agent
+frameworks; an incomplete cost-observability and optimization layer---token usage
+and per-model cost are not exported as metrics, and no semantic caching or routing
+intelligence reduces redundant LLM invocations; and an agent orchestration
+architecture that relies on hand-crafted orchestrators rather than a composable,
+reusable agent graph. These three dimensions constitute the research frontier
+addressed in Section~\ref{sec:mcp-extension}-\ref{sec:orchestration-evolution} of
+this work.
 
 
 %%------------------------------------------------------------
@@ -549,5 +692,3 @@ by Lewis et al.~\cite{lewis2020rag} and Reimers and Gurevych~\cite{reimers2019sb
 %%------------------------------------------------------------
 \section{Summary}
 \label{sec:background-summary}
-
-% TODO: Summarise the main takeaways from the literature and position your work.
