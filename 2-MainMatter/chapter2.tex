@@ -139,8 +139,8 @@ in production-grade enterprise systems.
 The preceding section established the two foundational breakthroughs that made
 modern language AI possible: distributed word representations and the
 Transformer architecture. Building upon these primitives, the field witnessed
-a rapid consolidation around a unified paradigm — the large language model
-(LLM) — in which ever-larger Transformer-based networks, pre-trained on
+a rapid consolidation around a unified paradigm - the large language model
+(LLM) - in which ever-larger Transformer-based networks, pre-trained on
 internet-scale corpora, acquire general-purpose language competence that can be
 redirected toward downstream tasks with minimal additional supervision. This
 section characterizes LLMs as a class, traces the methodological evolution from
@@ -170,8 +170,8 @@ apply a causal mask that restricts each token's attention to its leftward
 context, preserving the autoregressive generation property. This design choice
 contrasts with the encoder-only variant typified by BERT~\cite{devlin2018bert},
 which produces bidirectional contextual representations optimized for
-discriminative tasks. For generative applications — intelligent assistants,
-automated reasoning, and document synthesis — the decoder-only paradigm
+discriminative tasks. For generative applications - intelligent assistants,
+automated reasoning, and document synthesis - the decoder-only paradigm
 dominates, and it is this class of model that underpins the enterprise GenAI
 systems examined in this dissertation.
 
@@ -192,7 +192,7 @@ central to this work.
 % Motivates the alignment gap between next-token pre-training and user intent;
 % describes the three-stage RLHF pipeline (SFT → reward model → PPO) from
 % InstructGPT; highlights the key empirical result that a 1.3B aligned model
-% outperforms a 175B unaligned one — directly informing dynamic model selection.
+% outperforms a 175B unaligned one - directly informing dynamic model selection.
 Despite the generative competence acquired during pre-training, early LLMs
 exhibited a systematic misalignment between model behavior and user intent.
 A model trained solely to predict the next token on a web-scale corpus learns to
@@ -215,7 +215,7 @@ parameter GPT-3 baseline, demonstrating that alignment quality is not strictly
 a function of scale~\cite{ouyang2022instructgpt}. This result has profound
 practical implications: it established RLHF as the standard post-training
 procedure for production LLMs and confirmed that an aligned smaller model can
-match or exceed the utility of a larger unaligned one — a relationship that
+match or exceed the utility of a larger unaligned one - a relationship that
 informs the dynamic model selection strategies explored in this
 dissertation.
 
@@ -233,7 +233,7 @@ inference through token-priced cloud APIs; the latter is represented most
 prominently by Meta AI's Llama series. Touvron et al.~\cite{touvron2023llama2}
 introduced Llama~2, a family of models ranging from 7 to 70 billion parameters,
 pre-trained on two trillion tokens and released under a license permitting
-commercial use. Fine-tuned variants — Llama~2-Chat — further apply RLHF
+commercial use. Fine-tuned variants - Llama~2-Chat - further apply RLHF
 alignment, achieving performance competitive with closed-source alternatives on
 standard benchmarks while remaining locally deployable~\cite{touvron2023llama2}.
 
@@ -245,8 +245,8 @@ characteristics, and per-token cost. Smaller open-weight models, deployed
 on-premise or on reserved cloud instances, can serve high-volume, lower-complexity
 queries at substantially reduced marginal cost, while API-accessed frontier
 models handle tasks requiring peak reasoning performance. This model routing
-paradigm — often referred to as \textit{LLM cascading} or
-\textit{dynamic model selection} — is a central cost optimization mechanism
+paradigm - often referred to as \textit{LLM cascading} or
+\textit{dynamic model selection} - is a central cost optimization mechanism
 evaluated in this dissertation in the context of the Maestro framework's
 multi-cloud deployment~\cite{touvron2023llama2, ouyang2022instructgpt}.
 
@@ -692,10 +692,179 @@ this work.%
 \textbf{[TODO]} Section range above uses placeholder labels; update references when those sections are written.%
 }
 
+%%------------------------------------------------------------
+%% SECTION: Multi-Cloud Computing and Infrastructure as Code
+%% Covers: foundational properties of cloud computing (Armbrust 2010),
+%% interoperability and portability (Petcu 2013), IaC research landscape
+%% (Rahman et al. 2019), and OpenTofu in Maestro (closer2025maestro).
+%%------------------------------------------------------------
+\section{Multi-Cloud Computing and Infrastructure as Code}
+\label{sec:multi-cloud}
 
+The deployment of production-grade GenAI systems at enterprise scale is not a
+purely algorithmic challenge. It is equally an infrastructural one. The
+components surveyed in the preceding sections --- large language models, RAG
+pipelines, embedding models, and orchestration frameworks --- must ultimately be
+provisioned, networked, secured, and operated on physical or virtual compute.
+The strategic choices made at this infrastructure layer directly influence
+system cost, resilience, and vendor dependency, each of which is a first-class
+design concern in the Maestro framework. This section examines the theoretical
+foundations of cloud computing and multi-cloud strategy, the interoperability
+and portability challenges that heterogeneous deployments introduce, the
+research landscape of Infrastructure as Code as a discipline, and the role of
+declarative provisioning as the operational mechanism that makes reproducible,
+provider-agnostic infrastructure management tractable at scale.
 
 %%------------------------------------------------------------
-%% SECTION: Summary
+\subsection{Foundations of Cloud Computing}
+\label{subsec:cloud-foundations}
+
+\cite{armbrust2010view} identified three properties that fundamentally
+distinguish cloud computing from prior paradigms of enterprise infrastructure
+provision: the \emph{illusion of infinite computing resources} available on
+demand, the \emph{elimination of upfront capital commitments} by transferring
+hardware acquisition to the provider, and the ability to \emph{pay for
+resources on a short-term basis} and release them when no longer required.
+These properties collectively enable a shift from capital expenditure (CapEx),
+in which organizations maintain underutilized on-premises hardware, to
+operational expenditure (OpEx), in which compute costs track actual consumption.
+Armbrust et al.\ empirically demonstrated that average server utilization in
+traditional enterprise data centers hovers between 5\% and 20\%, whereas
+elastic cloud provisioning allows organizations to closely track real demand
+and pay accordingly. This cost structure has direct implications for
+AI-intensive workloads, where inference load is characteristically bursty and
+difficult to predict in advance: the ability to provision and release compute
+resources on-demand without upfront commitment is precisely the property that
+makes multi-model, multi-provider GenAI deployments economically viable.
+
+The same work identified a set of persistent obstacles to full cloud
+adoption, two of which are particularly relevant to this dissertation.
+\emph{Data lock-in} arises when an organization's data and application state
+become tightly coupled to a single provider's proprietary storage and API
+formats, making migration prohibitively costly and creating asymmetric
+negotiating power in vendor relationships. \emph{Service availability} refers
+to the concentration of operational risk in a single provider: outages,
+degradations, or unilateral policy changes propagate directly to all dependent
+workloads without recourse. Armbrust et al.\ identified the distribution of
+workloads across multiple independent providers as the principal mitigation for
+both failure modes~\cite{armbrust2010view}. This recommendation constitutes the
+foundational rationale for multi-cloud architectures and directly anticipates
+the design philosophy adopted in the Maestro framework, which provisions
+compute and model inference capacity across Azure, AWS, and GCP rather than
+committing uniformly to any single platform~\cite{closer2025maestro}.
+
 %%------------------------------------------------------------
-\section{Summary}
-\label{sec:background-summary}
+\subsection{Interoperability and Portability in Multi-Cloud Environments}
+\label{subsec:multi-cloud-interop}
+
+Deploying applications across heterogeneous cloud providers introduces a
+distinct class of engineering challenges that are not resolved by simply
+replicating resources across platforms. \cite{petcu2013interoperability}
+formalized these challenges by distinguishing two complementary but
+conceptually separate concerns. \emph{Portability} denotes the capacity to
+transfer an application or workload from one cloud environment to another with
+bounded effort; \emph{interoperability} denotes the capacity for components
+deployed on different clouds to communicate and cooperate at runtime. Both
+properties require explicit architectural investment and neither emerges
+spontaneously from layering services across providers.
+
+Petcu identified four primary sources of lock-in in multi-cloud deployments:
+proprietary APIs that expose non-standard resource abstractions; divergent data
+formats and serialization conventions that impede cross-provider data movement;
+incompatible service-level agreements that prevent unified governance policies;
+and asymmetric pricing models that obscure total cost of ownership in
+comparative analysis. Each source requires a distinct mitigation strategy ---
+respectively, abstraction layers, protocol normalization, contractual
+harmonization, and unified billing instrumentation~\cite{petcu2013interoperability}.
+
+Petcu's taxonomy further classifies multi-cloud deployment strategies along
+three operational archetypes. A \emph{redundant} strategy designates one
+provider as active and one or more as standby, achieving resilience through
+replication at the cost of idle resource expenditure. A \emph{complementary}
+strategy assigns distinct functional capabilities to distinct providers,
+exploiting each platform's relative strengths without requiring full workload
+duplication. A \emph{federated} strategy presents a unified abstraction to the
+client, with the underlying provider selection transparent to the consuming
+application~\cite{petcu2013interoperability}. Maestro operates primarily in
+the complementary mode: AWS Bedrock, Azure OpenAI, and Google Gemini are each
+exposed through a uniform \texttt{llm-microservice} interface that maintains a
+stable contract regardless of which backend processes a given inference request.
+This architecture directly instantiates the abstraction-layer pattern advocated
+by Petcu as the principal mechanism for resolving API heterogeneity across
+providers, while the stable service contract across providers is precisely what
+the interoperability axis of her framework prescribes~\cite{closer2025maestro}.
+
+%%------------------------------------------------------------
+\subsection{Infrastructure as Code: Research Landscape and Practice}
+\label{subsec:iac}
+
+Infrastructure as Code (IaC) is the practice of expressing the configuration
+and provisioning of computing infrastructure --- virtual machines, networks,
+storage, and managed services --- as machine-readable, version-controlled
+source files interpreted by a provisioning engine, rather than as manual
+procedures executed by operators. As cloud adoption accelerated, IaC emerged
+as the primary mechanism for making infrastructure reproducible, auditable,
+and amenable to the engineering disciplines of code review and automated
+testing.
+
+\cite{rahman2019iac} conducted a systematic mapping study of the IaC
+research landscape, searching six scholarly databases and applying principled
+inclusion and exclusion criteria to identify 32 peer-reviewed publications
+directly concerned with IaC. Through qualitative analysis of this corpus, they
+identified four topics that collectively define the research agenda for the
+field: (i) \emph{frameworks and tools for IaC}, encompassing the design and
+evaluation of provisioning engines and domain-specific languages; (ii) \emph{use
+of IaC in practice}, examining adoption patterns and integration with broader
+DevOps workflows; (iii) \emph{empirical studies of IaC}, including analyses of
+defect prevalence, security flaw introduction, and quality metrics in IaC
+scripts; and (iv) \emph{testing in IaC}, addressing the challenge of validating
+infrastructure specifications prior to deployment~\cite{rahman2019iac}.
+A notable finding of the mapping study is that, at the time of publication,
+empirical research and testing remained substantially underexplored relative to
+tool-focused contributions --- a gap that this dissertation partially addresses
+by empirically evaluating the cost and operational consequences of IaC-governed
+multi-cloud GenAI deployments.
+
+Rahman et al.\ further observed that Ansible, Chef, Puppet, and Terraform
+were the dominant tools represented in the identified publications, and that
+research activity on IaC was growing rapidly in proportion to cloud adoption.
+Their characterization of IaC as a practice that ``automatically configures
+system dependencies and provisions local and remote instances'' captures the
+operational role that IaC plays in Maestro's deployment
+architecture~\cite{rahman2019iac}: the framework's infrastructure layer is
+managed via OpenTofu~\cite{closer2025maestro}, the open-source, Linux
+Foundation-governed fork of HashiCorp Terraform, and thus falls squarely within
+the tool-focused and empirical categories that Rahman et al.\ identify as the
+core research vectors of the field.
+
+OpenTofu operates on a declarative model in which practitioners specify the
+desired state of infrastructure resources --- virtual networks, container
+registries, managed Kubernetes clusters, secret stores, and monitoring
+workspaces --- and the engine computes a dependency-ordered execution plan to
+converge the actual state toward the declared target. The provider model maps
+directly onto the multi-cloud architecture described above: a single OpenTofu
+configuration references provider plugins for Azure, AWS, and GCP
+simultaneously, with each resource block scoped to the appropriate provider
+through namespace qualification. Because the provider abstraction insulates
+resource declarations from the underlying API differences documented by
+Petcu~\cite{petcu2013interoperability}, operator-facing configuration remains
+uniform regardless of which cloud hosts a given resource --- a property
+essential for a framework that, by design, spans multiple providers.
+
+Beyond provider abstraction, the declarative IaC approach enables two
+properties of direct relevance to this dissertation's research objectives.
+First, it provides \emph{environment reproducibility}: the same configuration
+that provisions a staging environment in one subscription can instantiate an
+identical topology in a production subscription or a second cloud region,
+eliminating configuration drift as a source of environment-specific defects.
+Second, it establishes a \emph{cost-attribution surface}: because every
+provisioned resource is declared explicitly in versioned code, cost anomalies
+can be traced to specific configuration changes through commit history,
+supporting the FinOps disciplines of budget forecasting and spend attribution
+that are central to the optimisation objectives of this work~\cite{armbrust2010view,
+closer2025maestro}.
+
+%%------------------------------------------------------------
+%% SECTION: 
+%%------------------------------------------------------------
+
