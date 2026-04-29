@@ -43,7 +43,7 @@ surrounding context, or Skip-gram, which performs the inverse prediction.
 \end{figure}
 
 The resulting word embeddings encode both syntactic and semantic structure
-in a dense vector space, enabling linear algebraic operations over meaning ---
+in a dense vector space, enabling linear algebraic operations over meaning -
 most notably the well-known relationship \(\vec{king} - \vec{man} + \vec{woman}
 \approx \vec{queen}\).
 
@@ -90,8 +90,8 @@ and key projections:
     \label{fig:attention}
 \end{figure}
 
-By running multiple such attention operations in parallel --- Multi-Head
-Attention --- the model learns to simultaneously attend to different types of
+By running multiple such attention operations in parallel - Multi-Head
+Attention - the model learns to simultaneously attend to different types of
 relationships across the input, such as syntactic dependencies and semantic
 co-references. Positional encodings are injected additively into the input
 embeddings to compensate for the architecture's inherent permutation
@@ -107,10 +107,10 @@ requiring a fraction of the training compute~\cite{vaswani2017attention}.
 \end{figure}
 
 The Transformer's parallelism over sequence positions unlocked a new scaling
-regime for neural language models. Architectures derived from it --- most
+regime for neural language models. Architectures derived from it - most
 notably encoder-only models such as BERT~\cite{devlin2018bert} for
 representation learning, and decoder-only models such as the GPT
-series~\cite{brown2020gpt3} for text generation --- became the standard
+series~\cite{brown2020gpt3} for text generation - became the standard
 building blocks of enterprise GenAI systems. Critically, the attention
 mechanism scales quadratically with sequence length, \(O(n^2)\), meaning
 that context length is a primary cost driver in token-priced LLM APIs.
@@ -344,8 +344,8 @@ query encoder and the BART generator are updated, substantially reducing
 computational cost.
 
 Empirically, RAG established state-of-the-art results on three open-domain
-question answering benchmarks---Natural Questions (44.5 EM), WebQuestions (45.2
-EM), and CuratedTrec (52.2 EM)---outperforming both purely parametric seq2seq
+question answering benchmarks-Natural Questions (44.5 EM), WebQuestions (45.2
+EM), and CuratedTrec (52.2 EM)-outperforming both purely parametric seq2seq
 baselines (e.g.,\ T5-11B) and task-specific retrieve-and-extract systems (e.g.,\
 DPR-based readers)~\cite{lewis2020rag}. For generative tasks, human evaluators
 rated RAG outputs as more factual than a BART baseline in 42.7\% of Jeopardy
@@ -397,8 +397,8 @@ generates a hypothetical answer and then uses its embedding to retrieve
 semantically closer passages. Post-retrieval strategies include cross-encoder
 reranking to elevate the most relevant passages and context compression to
 eliminate redundant or off-topic content prior to generation. Indexing
-enhancements---such as sliding-window chunking, fine-grained segmentation, and
-metadata attachment---further improve retrieval recall and temporal
+enhancements-such as sliding-window chunking, fine-grained segmentation, and
+metadata attachment-further improve retrieval recall and temporal
 awareness. These modifications maintain the linear Retrieve-then-Read structure
 of Naive RAG while substantially improving end-to-end generation quality.
 
@@ -411,8 +411,8 @@ retrieval loops (e.g.,\ ITER-RETGEN~\cite{shao2023iterretgen}), adaptive
 retrieval triggered by generation uncertainty (e.g.,\ FLARE~\cite{jiang2023flare}),
 and self-reflective retrieval with token-level reflection signals
 (e.g.,\ Self-RAG~\cite{asai2023selfrag}). The modular design also enables
-seamless integration with complementary techniques---fine-tuning the retriever,
-fine-tuning the generator, or training both collaboratively---without requiring
+seamless integration with complementary techniques-fine-tuning the retriever,
+fine-tuning the generator, or training both collaboratively-without requiring
 architectural changes to the pipeline. Gao et al.~\cite{gao2023ragsurvey} position Modular
 RAG as the current frontier, noting that its flexibility allows task-specific
 orchestration patterns that static pipelines cannot accommodate.
@@ -492,7 +492,7 @@ The Siamese design decouples encoding from comparison: document embeddings are
 computed once at indexing time and stored in a vector index, reducing inference at
 query time to a single forward pass followed by a nearest-neighbor lookup. This
 reduces the 65-hour pairwise comparison to approximately 5 seconds for a
-10,000-sentence corpus, while preserving---or improving upon---BERT's accuracy on
+10,000-sentence corpus, while preserving-or improving upon-BERT's accuracy on
 STS benchmarks~\cite{reimers2019sbert}. On the STS tasks evaluated, SBERT
 achieves an improvement of 11~Spearman correlation points over InferSent and
 5~points over Universal Sentence Encoder.
@@ -511,7 +511,7 @@ operationalizes the RAG pipeline of Lewis et al.~\cite{lewis2020rag} through a m
 architecture that cleanly separates ingestion, indexing, retrieval, and
 synthesis~\cite{liu2022llamaindex}. During the \emph{ingestion} stage,
 \texttt{SimpleDirectoryReader} loads raw documents, which are subsequently
-segmented by \texttt{SentenceSplitter} into overlapping chunks---a direct
+segmented by \texttt{SentenceSplitter} into overlapping chunks-a direct
 implementation of the chunking strategies discussed by Gao et al.~\cite{gao2023ragsurvey}
 for Advanced RAG. The resulting nodes are encoded via a configurable embedding
 model (\texttt{Settings.embed\_model}), which defaults to OpenAI's
@@ -521,8 +521,8 @@ SBERT-compatible model from the HuggingFace ecosystem (e.g.,\
 Siamese network paradigm of Reimers and Gurevych~\cite{reimers2019sbert}.
 
 At query time, LlamaIndex's \texttt{VectorStoreIndex} retrieves the top-$K$ most
-relevant nodes via cosine similarity---the same MIPS formulation as DPR
-in~\cite{lewis2020rag}---and passes the retrieved context together with the user
+relevant nodes via cosine similarity-the same MIPS formulation as DPR
+in~\cite{lewis2020rag}-and passes the retrieved context together with the user
 query to the configured language model for response synthesis. The framework
 further exposes advanced retrieval patterns consistent with the Modular RAG
 taxonomy of Gao et al.~\cite{gao2023ragsurvey}: \texttt{RouterQueryEngine} implements
@@ -535,13 +535,163 @@ Gao et al.~\cite{gao2023ragsurvey}, grounded in the dense retrieval foundations 
 by Lewis et al.~\cite{lewis2020rag} and Reimers and Gurevych~\cite{reimers2019sbert}.
 
 %%------------------------------------------------------------
-%% SECTION: Related Work
+%% SECTION: Frameworks, MCP and Maestro
 %%------------------------------------------------------------
-\section{Related Work}
-\label{sec:related-work}
+\section{Frameworks, MCP and Maestro}
+\label{sec:orchestration}
 
-% TODO: Compare and contrast existing work with your approach.
-% Organise by sub-topic if appropriate.
+The foundations established in the preceding sections-dense vector
+representations, attention-based language models, retrieval-augmented
+generation, and dense semantic retrieval-describe the \emph{components} of a
+modern GenAI system. What they do not describe is how those components are
+composed, governed, and operated at production scale. This section addresses
+that gap across three layers of increasing practical specificity.
+
+\subsection{LLM Orchestration Frameworks}
+\label{sec:orchestration-frameworks}
+
+The emergence of capable large language models created an immediate engineering
+challenge: how to compose LLMs with external tools, persistent memory, and
+retrieval systems into coherent, repeatable pipelines. LangChain~\cite{chase2022langchain}
+addressed this challenge by introducing a layered abstraction model built around
+three core primitives. A \textit{chain} is a composable sequence of calls-to an
+LLM, a retriever, a tool, or another chain-that can be assembled declaratively
+and reused across applications. A \textit{tool} is any callable capability exposed
+to the model with a name, a natural-language description, and a typed input
+schema; the LLM uses these descriptions to decide, at runtime, which tool to
+invoke and with what arguments. \textit{Memory} modules attach conversational
+context to any chain, enabling stateful interactions across multiple turns. Taken
+together, these primitives define what has become the dominant orchestration
+pattern in the field: a model-centric loop in which the LLM acts as a reasoning
+engine that selects and sequences external capabilities.
+
+The theoretical foundation for this loop was established independently by
+\citeauthor{yao2022react}~\cite{yao2022react}, who proposed the \textsc{ReAct}
+paradigm-an acronym for \textit{Reason + Act}. Rather than treating chain-of-thought
+reasoning and tool use as separate concerns, \textsc{ReAct} interleaves them into
+a single iterative cycle: the model emits a \textit{Thought} (an explicit
+reasoning step), selects an \textit{Action} (a tool call), receives an
+\textit{Observation} (the tool's output), and repeats until a terminal condition
+is satisfied. Evaluated on multi-step knowledge-intensive tasks-including
+HotpotQA, FEVER, ALFWorld, and WebShop-\textsc{ReAct} outperformed both
+chain-of-thought prompting alone and action-only baselines, demonstrating that
+the tight coupling of reasoning and acting is essential for robust agent
+behavior~\cite{yao2022react}. This loop is the intellectual ancestor of every
+agent executor in subsequent frameworks, including LangChain's
+\texttt{AgentExecutor}, and it directly informs the orchestration design of the
+system examined in this work.
+
+\subsection{Model Context Protocol}
+\label{sec:mcp}
+
+A persistent weakness of the orchestration paradigm described above is the
+absence of a standard interface between agents and the external systems they
+invoke. In practice, each integration is bespoke: a tool written for LangChain is
+not directly consumable by a different agent framework, and a function registered
+for OpenAI's function-calling API is invisible to a Claude-based agent. This
+$N \times M$ integration problem-$N$ agent frameworks multiplied by $M$ external
+services-generates duplicated adapter code, inconsistent error handling, and
+fragile dependency chains that impede both development velocity and
+maintainability~\cite{anthropic2024mcp}.
+
+The Model Context Protocol (MCP), introduced by Anthropic in
+2024~\cite{anthropic2024mcp} and specified in full at the canonical reference
+documentation~\cite{modelcontextprotocol2024}, addresses this problem by defining
+an open, transport-agnostic protocol that standardizes how LLM-based hosts expose
+and consume external capabilities. The protocol organizes participants into three
+roles. An \textit{MCP Host} is the application embedding the LLM-a development
+environment, a chat interface, or a custom agent runtime. An \textit{MCP Client}
+is the component within the host that manages connections to one or more servers.
+An \textit{MCP Server} is a lightweight process that exposes a bounded set of
+capabilities over JSON-RPC~2.0, using one of two transport mechanisms: standard
+I/O for local processes, or HTTP with Server-Sent Events for remote
+deployments~\cite{modelcontextprotocol2024}. Capabilities are organized into
+three first-class primitives: \textit{Tools}-functions that the model may invoke
+with structured arguments, analogous to LangChain tools but protocol-defined;
+\textit{Resources}-read-only data artifacts such as file contents, database
+schemas, or live API responses, exposed for model consumption without
+side-effects; and \textit{Prompts}-parameterized prompt templates that servers
+can offer for reuse~\cite{anthropic2024mcp, modelcontextprotocol2024}.
+
+The distinction between MCP and vendor-specific function calling is substantive.
+OpenAI's function-calling mechanism, for example, is stateless, scoped to a
+single model provider, and requires the host application to manage all
+serialization, discovery, and transport concerns. MCP, by contrast, is stateful
+at the protocol level, provider-agnostic, and supports dynamic capability
+discovery: a client can query any MCP server for its current tool and resource
+catalog without prior knowledge of the server's implementation. The consequence
+is a reduction from $N \times M$ to $N + M$ integration surface-any
+MCP-compliant host can interoperate with any MCP-compliant server, regardless of
+the LLM or framework in use. This interoperability property is directly relevant
+to multi-cloud enterprise deployments, where the ability to expose heterogeneous
+data services-across Azure, AWS, and GCP-through a single protocol layer has
+significant implications for both governance and maintainability.
+
+\subsection{Enterprise GenAI Frameworks: Maestro in Context}
+\label{sec:maestro}
+
+Research prototypes built on frameworks such as LangChain and paradigms such as
+\textsc{ReAct} operate under a set of assumptions that enterprise production
+environments do not share. In a production deployment serving multiple tenants
+across organizational units, correctness and capability are necessary but
+insufficient conditions. The system must additionally satisfy requirements for
+identity-based access control, secret management, encryption at rest and in
+transit, cost observability at the token and model level, multi-tenancy isolation,
+deployment portability across cloud providers, and operational reliability under
+variable load-none of which appear as first-class concerns in the
+orchestration literature reviewed above. Meeting these requirements demands an
+architectural discipline that goes beyond assembling chains and tools: it
+requires a governed platform in which each component is independently deployable,
+swappable without contract changes, and instrumented for both operational
+monitoring and audit compliance.
+
+The Maestro GenAI Framework, developed by Closer Consulting, represents a
+practitioner response to precisely this gap~\cite{closer2025maestro}. Designed
+and validated across production deployments in the energy, healthcare, financial,
+and pharmaceutical sectors, Maestro is a multi-repository, container-native
+microservices platform whose architecture decomposes the RAG pipeline into
+independently governed services. The \textit{LLM microservice} acts as a
+provider-agnostic gateway that routes generation requests to Azure OpenAI
+(GPT-4o, GPT-4o-mini), OpenAI, Azure AI Services (Mistral-Nemo, DeepSeek-R1),
+and Google Gemini, exposing a stable contract regardless of the underlying model.
+The \textit{orchestrator} (chatbot-backend) implements the \textsc{ReAct}-derived
+retrieval-augmented generation loop-history retrieval, hybrid vector search,
+per-chunk relevance filtering, prompt assembly, and LLM invocation-as a FastAPI
+service backed by LangChain. The \textit{vector database service} encapsulates
+document ingestion, chunking, embedding via \texttt{text-embedding-ada-002}, and
+hybrid kNN+BM25 retrieval over MongoDB Atlas. The \textit{datastore microservice}
+provides a provider-agnostic persistence layer over Azure Cosmos~DB and MongoDB,
+covering chat history, feedback, and document metadata. A \textit{guardrails
+microservice} implements PII detection using Microsoft Presidio for
+Portuguese-language inputs. Two \textit{frontend surfaces}-a Streamlit chatbot
+with Microsoft Entra~ID authentication and an Angular back-office for prompt and
+question management-complete the user-facing layer. Infrastructure is managed
+via OpenTofu targeting Azure, and observability is implemented through
+OpenTelemetry with Azure Monitor as the backend. In production, the framework has
+demonstrated measurable impact at scale: one deployment serving over~600 daily
+active users with 4,000 daily interactions across five embedded LLM models, and
+another achieving 83\% question-answering accuracy over a corpus of 2,907 indexed
+legal documents~\cite{closer2025maestro}.
+
+In spite of this production maturity, a systematic analysis of the framework's
+current implementation reveals a set of structural limitations that constrain its
+evolution along three dimensions: the absence of a standardized tool-exposure
+protocol-each microservice is reachable only through bespoke REST endpoints,
+with no dynamic capability discovery and no interoperability with external agent
+frameworks; an incomplete cost-observability and optimization layer-token usage
+and per-model cost are not exported as metrics, and no semantic caching or routing
+intelligence reduces redundant LLM invocations; and an agent orchestration
+architecture that relies on hand-crafted orchestrators rather than a composable,
+reusable agent graph. These three dimensions constitute the research frontier
+% TODO: Placeholder cross-refs --- replace when real sections exist:
+%   - add \label{sec:maestro-mcp-extension} / \label{sec:maestro-orchestration-evolution}, or
+%   - rephrase to Chapters~\ref{cha:design}--\ref{cha:implementation} (or other final structure).
+addressed in Section~\ref{sec:maestro-mcp-extension}--\ref{sec:maestro-orchestration-evolution} of
+this work.%
+\todo[inline]{%
+\textbf{[TODO]} Section range above uses placeholder labels; update references when those sections are written.%
+}
+
 
 
 %%------------------------------------------------------------
@@ -549,5 +699,3 @@ by Lewis et al.~\cite{lewis2020rag} and Reimers and Gurevych~\cite{reimers2019sb
 %%------------------------------------------------------------
 \section{Summary}
 \label{sec:background-summary}
-
-% TODO: Summarise the main takeaways from the literature and position your work.
