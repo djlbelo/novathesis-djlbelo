@@ -5,7 +5,9 @@
 
 param(
     [string]$Engine = "lua",
-    [switch]$Clean
+    [switch]$Clean,
+    # Delete LaTeX auxiliary files before building (fixes corrupt/truncated .aux bookmark entries, stale refs).
+    [switch]$Fresh
 )
 
 Write-Host "NOVAthesis Direct Compilation Script" -ForegroundColor Cyan
@@ -70,6 +72,19 @@ if (-not $biber) {
 
 Write-Host "Main file: template.tex" -ForegroundColor Green
 Write-Host ""
+
+if ($Fresh) {
+    Write-Host "Fresh build: removing auxiliary files..." -ForegroundColor Cyan
+    $freshPatterns = @(
+        "template.aux", "template.bbl", "template.bcf", "template.blg", "template.out",
+        "template.toc", "template.lof", "template.lot", "template.lol", "template.run.xml",
+        "template.synctex.gz"
+    )
+    foreach ($f in $freshPatterns) {
+        if (Test-Path $f) { Remove-Item -Force $f }
+    }
+    Write-Host ""
+}
 
 # Compilation flags
 $flags = "-shell-escape", "-synctex=1", "-interaction=nonstopmode"
