@@ -454,7 +454,8 @@ embeddings amenable to efficient cosine-similarity comparison.
     \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/sbert-network-anchor-positive-negative}
     \caption{SBERT Siamese network architecture with triplet loss objective. Adapted from~\cite{reimers2019sbert}.}
     \label{fig:sbert-triplet}
-\end{figure} The architecture
+\end{figure} 
+
 The architecture passes each sentence independently through a shared BERT encoder, then applies
 mean-pooling over the output token embeddings to obtain a single vector
 representation $\mathbf{u}$ and $\mathbf{v}$ for a sentence pair. Three training
@@ -581,6 +582,14 @@ agent executor in subsequent frameworks, including LangChain's
 \texttt{AgentExecutor}, and it directly informs the orchestration design of the
 system examined in this work.
 
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/react-loop}
+    \caption{The \textsc{ReAct} reasoning loop interleaving \textit{Thought},
+    \textit{Action}, and \textit{Observation} steps. Adapted from~\cite{yao2022react}.}
+    \label{fig:react-loop}
+\end{figure} 
+
 \subsection{Model Context Protocol}
 \label{sec:mcp}
 
@@ -593,6 +602,13 @@ $N \times M$ integration problem-$N$ agent frameworks multiplied by $M$ external
 services-generates duplicated adapter code, inconsistent error handling, and
 fragile dependency chains that impede both development velocity and
 maintainability~\cite{anthropic2024mcp}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/mcp-architecture}
+    \caption{Model Context Protocol architecture showing the Host, Client, and Server roles connected via JSON-RPC~2.0. Adapted from~\cite{modelcontextprotocol2024}.}
+    \label{fig:mcp-architecture}
+\end{figure}
 
 The Model Context Protocol (MCP), introduced by Anthropic in
 2024~\cite{anthropic2024mcp} and specified in full at the canonical reference
@@ -673,6 +689,13 @@ active users with 4,000 daily interactions across five embedded LLM models, and
 another achieving 83\% question-answering accuracy over a corpus of 2,907 indexed
 legal documents~\cite{closer2025maestro}.
 
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/maestro-architecture}
+    \caption{Functional architecture of the Maestro GenAI Framework, illustrating the \textit{multi-agent orchestrator}, \textit{AI Gateway}, \textit{content moderation}, self-hosted and managed model endpoints, and observability layer. Adapted from~\cite{closer2025maestro}.}
+    \label{fig:maestro-functional}
+\end{figure}
+
 In spite of this production maturity, a systematic analysis of the framework's
 current implementation reveals a set of structural limitations that constrain its
 evolution along three dimensions: the absence of a standardized tool-exposure
@@ -683,7 +706,7 @@ and per-model cost are not exported as metrics, and no semantic caching or routi
 intelligence reduces redundant LLM invocations; and an agent orchestration
 architecture that relies on hand-crafted orchestrators rather than a composable,
 reusable agent graph. These three dimensions constitute the research frontier
-% TODO: Placeholder cross-refs --- replace when real sections exist:
+% TODO: Placeholder cross-refs - replace when real sections exist:
 %   - add \label{sec:maestro-mcp-extension} / \label{sec:maestro-orchestration-evolution}, or
 %   - rephrase to Chapters~\ref{cha:design}--\ref{cha:implementation} (or other final structure).
 addressed in Section~\ref{sec:maestro-mcp-extension}--\ref{sec:maestro-orchestration-evolution} of
@@ -703,8 +726,8 @@ this work.%
 
 The deployment of production-grade GenAI systems at enterprise scale is not a
 purely algorithmic challenge. It is equally an infrastructural one. The
-components surveyed in the preceding sections --- large language models, RAG
-pipelines, embedding models, and orchestration frameworks --- must ultimately be
+components surveyed in the preceding sections - large language models, RAG
+pipelines, embedding models, and orchestration frameworks - must ultimately be
 provisioned, networked, secured, and operated on physical or virtual compute.
 The strategic choices made at this infrastructure layer directly influence
 system cost, resilience, and vendor dependency, each of which is a first-class
@@ -736,6 +759,8 @@ AI-intensive workloads, where inference load is characteristically bursty and
 difficult to predict in advance: the ability to provision and release compute
 resources on-demand without upfront commitment is precisely the property that
 makes multi-model, multi-provider GenAI deployments economically viable.
+
+
 
 The same work identified a set of persistent obstacles to full cloud
 adoption, two of which are particularly relevant to this dissertation.
@@ -794,13 +819,27 @@ by Petcu as the principal mechanism for resolving API heterogeneity across
 providers, while the stable service contract across providers is precisely what
 the interoperability axis of her framework prescribes~\cite{closer2025maestro}.
 
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/multi-cloud-archetypes-maestro}
+    \caption{Multi-cloud deployment archetypes - redundant, complementary, and federated strategies - as classified by Petcu~\cite{petcu2013interoperability}. The Maestro framework operates in complementary mode.}
+    \label{fig:multi-cloud-archetypes-maestro}
+\end{figure}
+
+% TODO (author action): Replace the current AI-generated figure with an original, author-created diagram that accurately reflects the multi-cloud deployment archetypes as described by Petcu, following best practices for scientific illustration in LaTeX. Ensure the new figure is high quality, clearly labeled, and properly captioned.
+%
+% (Visible note for readers/evaluators: This figure is currently AI-generated and serves as a placeholder. The final submission will include an author-produced, publication-ready diagram.)
+\todo[inline]{%
+\textbf{[TODO]} Replace the current AI-generated figure with an original diagram%
+}
+
 %%------------------------------------------------------------
 \subsection{Infrastructure as Code: Research Landscape and Practice}
 \label{subsec:iac}
 
 Infrastructure as Code (IaC) is the practice of expressing the configuration
-and provisioning of computing infrastructure --- virtual machines, networks,
-storage, and managed services --- as machine-readable, version-controlled
+and provisioning of computing infrastructure - virtual machines, networks,
+storage, and managed services - as machine-readable, version-controlled
 source files interpreted by a provisioning engine, rather than as manual
 procedures executed by operators. As cloud adoption accelerated, IaC emerged
 as the primary mechanism for making infrastructure reproducible, auditable,
@@ -821,7 +860,7 @@ scripts; and (iv) \emph{testing in IaC}, addressing the challenge of validating
 infrastructure specifications prior to deployment~\cite{rahman2019iac}.
 A notable finding of the mapping study is that, at the time of publication,
 empirical research and testing remained substantially underexplored relative to
-tool-focused contributions --- a gap that this dissertation partially addresses
+tool-focused contributions - a gap that this dissertation partially addresses
 by empirically evaluating the cost and operational consequences of IaC-governed
 multi-cloud GenAI deployments.
 
@@ -838,9 +877,9 @@ the tool-focused and empirical categories that Rahman et al.\ identify as the
 core research vectors of the field.
 
 OpenTofu operates on a declarative model in which practitioners specify the
-desired state of infrastructure resources --- virtual networks, container
+desired state of infrastructure resources - virtual networks, container
 registries, managed Kubernetes clusters, secret stores, and monitoring
-workspaces --- and the engine computes a dependency-ordered execution plan to
+workspaces - and the engine computes a dependency-ordered execution plan to
 converge the actual state toward the declared target. The provider model maps
 directly onto the multi-cloud architecture described above: a single OpenTofu
 configuration references provider plugins for Azure, AWS, and GCP
@@ -848,7 +887,7 @@ simultaneously, with each resource block scoped to the appropriate provider
 through namespace qualification. Because the provider abstraction insulates
 resource declarations from the underlying API differences documented by
 Petcu~\cite{petcu2013interoperability}, operator-facing configuration remains
-uniform regardless of which cloud hosts a given resource --- a property
+uniform regardless of which cloud hosts a given resource - a property
 essential for a framework that, by design, spans multiple providers.
 
 Beyond provider abstraction, the declarative IaC approach enables two
