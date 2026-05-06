@@ -584,7 +584,7 @@ system examined in this work.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/react-loop}
+    \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/reAct-loop}
     \caption{The \textsc{ReAct} reasoning loop interleaving \textit{Thought},
     \textit{Action}, and \textit{Observation} steps. Adapted from~\cite{yao2022react}.}
     \label{fig:react-loop}
@@ -904,6 +904,92 @@ that are central to the optimisation objectives of this work~\cite{armbrust2010v
 closer2025maestro}.
 
 %%------------------------------------------------------------
-%% SECTION: 
+%% SECTION: Cost Optimization
 %%------------------------------------------------------------
+\section{Cost Optimization}
+\label{sec:cost-optimization}
 
+The economic profile of large language model (LLM) systems is dominated by inference costs that scale with the number of tokens processed, the capability tier of the selected model, and the frequency with which inference is invoked. In multi-cloud GenAI deployments, these costs accumulate across providers and workloads, making cost optimization a first-class architectural concern rather than a post-hoc operational adjustment \cite{armbrust2010view,petcu2013interoperability,closer2025maestro}. This section surveys five complementary classes of techniques—semantic caching, model cascades, prompt compression, reranking, and prompt caching—together with the broader market context that shapes their impact.
+
+At a high level, all of these techniques can be viewed as mechanisms for reducing the \emph{effective token cost} of a system. Some reduce the number of tokens that reach a model (prompt compression, reranking), others reduce the number of model calls (semantic caching, prompt caching), and others reduce the marginal cost per call by routing traffic to cheaper models when possible (LLM cascades). In a multi-cloud setting, these mechanisms compose with provider-specific pricing to determine the realized cost of serving a given workload \cite{gao2023ragsurvey,closer2025maestro}.
+
+\subsection{Semantic Caching}
+\label{subsec:semantic-caching}
+
+Semantic caching is motivated by the observation that many production queries are not unique: users frequently repeat questions, rephrase earlier requests, or ask follow-up questions whose answers can be derived from previous responses. Traditional caches such as Redis operate at the level of exact key matching and cannot exploit semantic similarity, so even minor paraphrases lead to cache misses. GPTCache addresses this limitation by introducing an open-source \emph{semantic} cache for LLM applications that stores responses and retrieves them via embedding-based similarity search instead of exact-string matching \cite{bang2023gptcache}.
+
+The architecture of GPTCache is conceptually straightforward. Incoming queries are first sent to GPTCache, which encodes both the query and previously stored queries and responses into vector embeddings using an embedding model compatible with vector databases such as Milvus or other ANN indexes \cite{bang2023gptcache}. A nearest-neighbour search over these embeddings determines whether a semantically similar query has already been answered; if the similarity exceeds a configurable threshold, the cached answer is returned directly. Only on a cache miss does the system forward the request to the underlying LLM, and the new query–response pair is then inserted into the cache for future reuse \cite{bang2023gptcache}.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\linewidth]{5-Figures/Chapter2/gptcache_architecture}
+    \caption{Architecture of GPTCache as a semantic caching layer for LLM applications, showing the adapter, pre-processor, embedding generator, cache manager, similarity evaluator, and post-processor. Adapted from Bang et al. \cite{bang2023gptcache}.}
+    \label{fig:gptcache-architecture}
+\end{figure}
+
+Empirical results reported in the GPTCache paper show that, when integrated with OpenAI’s GPT services, cache hits can increase response speed by a factor of 2–10, while also insulating the application from network fluctuations and provider-side latency spikes \cite{bang2023gptcache}. Because the cost of an embedding lookup is negligible compared to a full LLM call, a modest hit rate already translates into tangible API savings in token-priced environments. This is particularly relevant for enterprise assistants, FAQ bots, and RAG-based systems where user queries exhibit strong repetition patterns across tenants and time \cite{bang2023gptcache,closer2025maestro}.
+
+For the multi-cloud framework studied in this dissertation, semantic caching aligns naturally with existing RAG infrastructure. The system already computes embeddings for retrieval and indexing; extending this embedding layer to back a semantic cache therefore requires minimal architectural change. In practice, semantic caching can be deployed as a cross-cutting concern in the LLM gateway, ensuring that repeated queries are intercepted before they reach any particular provider, thereby reducing both cost and latency across clouds \cite{closer2025maestro,liu2022llamaindex}.
+
+\subsection{LLM Cascades}
+\label{subsec:llm-cascades}
+
+Where semantic caching reduces redundant \emph{calls}, LLM cascades target the cost of \emph{which} model is invoked when a call is necessary. FrugalGPT formalizes this idea by studying how to route queries across a portfolio of models to minimize cost subject to accuracy constraints. The central premise is that not all requests require the most capable (and expensive) model: many can be handled adequately by smaller, cheaper models, as long as the system can detect which queries are “easy” and which are “hard” \cite{chen2023frugalgpt}.
+
+FrugalGPT proposes several routing strategies, including rule-based routing based on query features, learned routing policies that predict which model will answer a query correctly, and multi-step cascades where a query is first answered by a cheap model and escalated only if the answer is judged unsatisfactory \cite{chen2023frugalgpt}. The experimental evaluation shows that such cascades can reduce inference cost by 50–98\% while maintaining accuracy comparable to the best single model; in some configurations, FrugalGPT even exceeds the accuracy of GPT-4 while operating at the same or lower cost, by judiciously combining the strengths of multiple models \cite{chen2023frugalgpt}.
+
+This work is directly connected to the broader literature on model scaling laws and alignment. Scaling-law studies suggest that larger models generally perform better, but at higher per-token cost \cite{brown2020gpt3}. At the same time, alignment research such as InstructGPT shows that smaller, well-aligned models can outperform larger unaligned ones on human preference metrics \cite{ouyang2022instructgpt}. FrugalGPT leverages both observations by constructing cascades in which small, cheap models handle the bulk of traffic, while larger models are reserved for edge cases that truly benefit from their additional capacity \cite{chen2023frugalgpt,ouyang2022instructgpt}.
+
+In a multi-cloud GenAI framework, cascades can be realized at the level of the LLM gateway. The gateway can expose a single logical endpoint to clients while internally routing requests among on-premise open-weight models (e.g., Llama 2), mid-tier cloud APIs, and frontier proprietary models, according to a routing policy informed by query characteristics, historical performance, and business priorities \cite{touvron2023llama2,closer2025maestro}. This arrangement transforms model choice from a static configuration into a dynamic optimization problem over latency, accuracy, and cost, which can be tuned per tenant or per workload.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\linewidth]{5-Figures/Chapter2/frugalGPT}
+    \caption{Overview of cost-reduction strategies in FrugalGPT, including prompt adaptation, LLM approximation, and LLM cascade. Adapted from Chen et al. \cite{chen2023frugalgpt}.}
+    \label{fig:frugalgpt-strategies}
+\end{figure}
+
+\subsection{Prompt Compression}
+\label{subsec:prompt-compression}
+
+Prompt compression addresses a different cost driver: the number of tokens that must be processed per inference. Transformer-based LLMs have an attention mechanism whose computational and memory complexity scales quadratically with sequence length, meaning that longer prompts both cost more and are slower to process \cite{vaswani2017attention,brown2020gpt3}. In realistic enterprise workflows, prompt length is often dominated not by the user’s immediate query, but by system instructions, conversation history, and retrieved context from RAG pipelines \cite{gao2023ragsurvey,closer2025maestro}.
+
+Research on prompt compression explores how much of this input can be removed or condensed without materially degrading model performance. Techniques range from heuristic truncation and summarization to learned compression models that identify the most salient segments of the input. Although the LLM-in-a-Flash paper by Jin et al.\ focuses primarily on hardware-level optimizations—storing model weights on flash memory and using techniques such as windowing and row–column bundling to reduce data transfer—it also illustrates a broader point: that many aspects of LLM inference cost are driven by unnecessary data movement and redundant processing, both at the hardware and token levels \cite{jin2023llminflash,vaswani2017attention}.
+
+The LLM-in-a-Flash framework constructs an inference cost model that explicitly accounts for the characteristics of flash memory, then introduces two techniques to optimize inference under limited DRAM. First, windowing reuses previously activated neurons to reduce the amount of data that must be read from flash, and second, row–column bundling increases the contiguity of reads to better exploit the sequential-access strengths of flash \cite{jin2023llminflash}. Together, these techniques enable running models up to twice the size of available DRAM, with reported 4–5$\times$ speed-ups on CPUs and 20–25$\times$ speed-ups on GPUs compared to naive loading strategies \cite{jin2023llminflash}.
+
+For the purposes of this dissertation, the key analogy is that token-level prompt compression plays a similar role at the software layer as windowing and bundling do at the hardware layer: both reduce the amount of information the system must handle per request. In practice, prompt compression can be integrated in the orchestration framework by inserting a compression step between retrieval and generation, where the retrieved passages and conversation history are summarized or filtered before being passed to the LLM. This can significantly reduce token usage without sacrificing answer quality, especially in knowledge-intensive tasks with verbose supporting documents \cite{gao2023ragsurvey,closer2025maestro}.
+
+\subsection{Reranking Efficiency}
+\label{subsec:reranking-efficiency}
+
+Reranking techniques address the efficiency and quality of retrieval, which indirectly affects cost by influencing how much and what kind of context is included in the prompt. In naive RAG pipelines, the top-$k$ documents from a vector search are simply concatenated with the user query and fed to the LLM. This approach is simple but brittle: if $k$ is too small, relevant information may be omitted; if $k$ is too large, the prompt becomes long and noisy, increasing both cost and the risk of hallucinations \cite{lewis2020rag,gao2023ragsurvey}.
+
+Advanced RAG architectures introduce a reranking stage to mitigate these issues. For example, Gao et al.\ describe pipelines where an initial dense retriever proposes a candidate set, and a more expensive cross-encoder reranker then re-scores these candidates to select a smaller, higher-precision subset for inclusion in the prompt \cite{gao2023ragsurvey}. This two-stage design shifts some cost from the generator to the retriever: instead of asking the LLM to parse and ignore irrelevant passages inside a long prompt, the system spends a controlled amount of compute upfront to filter them out. When measured in effective token cost—the total number of tokens processed along the pipeline—reranking can therefore be cheaper than relying solely on inference-time reasoning over large contexts.
+
+In the context of this work, reranking can be implemented as a dedicated microservice in the RAG subsystem. For instance, the vector store can return a larger candidate set (e.g., $k=50$), which is then reranked using a cross-encoder model such as a Sentence-BERT variant fine-tuned for passage relevance, before selecting a smaller number of chunks (e.g., $m=5$–$10$) to include in the prompt \cite{reimers2019sbert,liu2022llamaindex}. This design improves the quality of retrieved evidence while keeping the prompt size under control, lowering both the monetary and computational cost of generation \cite{gao2023ragsurvey,closer2025maestro}.
+
+\subsection{Prompt Caching}
+\label{subsec:prompt-caching}
+
+Prompt caching is a complementary mechanism that has recently been introduced at the API layer by major model providers. The core idea is that repeated prompt prefixes—such as long system prompts, policy text, or shared instructions—can be cached on the provider side and billed at a discounted rate when reused across multiple requests. Anthropic’s Model Context Protocol (MCP) ecosystem and related documentation describe prompt caching as part of a broader effort to standardize how hosts and tools expose context and capabilities to LLMs, including the ability to reuse stable prompt templates efficiently \cite{anthropic2024mcp,modelcontextprotocol2024}.
+
+From the application developer’s perspective, prompt caching differs from semantic caching in two important respects. First, it operates at the level of \emph{exact} prefix reuse rather than semantic similarity: the cached segment must be identical for the provider to apply the discount. Second, it does not bypass inference; instead, it makes inference cheaper on the repeated portion of the prompt while still processing the new suffix at full price. This makes it particularly attractive for enterprise assistants where a substantial portion of each prompt consists of fixed instructions or organization-specific policies that change rarely compared to user queries \cite{anthropic2024mcp,modelcontextprotocol2024}.
+
+In a multi-cloud architecture, prompt-caching support will vary across providers, but the design principles remain the same. The orchestration layer should be structured so that stable prompt components are explicitly separated from dynamic ones, and so that repeated prefixes can be reused across requests and sessions. Combined with semantic caching and cascades, prompt caching allows the system to benefit from both vendor-side and application-side reuse, jointly reducing latency and cost without compromising functional behavior \cite{closer2025maestro,chase2022langchain}.
+
+\subsection{Market Context and LLMFlation}
+\label{subsec:market-context}
+
+The effectiveness and urgency of cost-optimization strategies are shaped by the broader dynamics of LLM pricing. Sardana and Frankle introduce the notion of “LLMflation” to describe the rapid decline in LLM inference costs over time, arguing that token prices have dropped by several orders of magnitude for comparable capability tiers as infrastructure, hardware, and model efficiency have improved \cite{a16z2024llmflation}. Analyses of token price indices report similar trends, documenting substantial reductions in the cost per million tokens across both proprietary and open-weight ecosystems.
+
+However, lower unit prices do not automatically translate into lower total spend. As LLMs become cheaper and more capable, organizations tend to expand their usage, apply models to more workflows, and increase the amount of context supplied to each query, especially in RAG and agentic settings \cite{gao2023ragsurvey,closer2025maestro}. In many production systems, demand growth and prompt length inflation can easily outpace price reductions, leading to absolute cost growth despite lower per-token rates. This dynamic closely mirrors historical patterns in cloud computing, where decreasing resource prices have often coincided with increasing overall expenditure due to workload expansion \cite{armbrust2010view,petcu2013interoperability}.
+
+For these reasons, the literature consistently argues that cost optimization must be embedded into the architecture of GenAI systems rather than treated as a transient concern that will be “solved” by future price cuts. Techniques such as semantic caching, model cascades, prompt compression, reranking, and prompt caching provide orthogonal levers that remain valuable even as prices fall, because they address structural drivers of cost: repeated queries, over-provisioned model capacity, unnecessary tokens, and inefficient retrieval \cite{bang2023gptcache,chen2023frugalgpt,gao2023ragsurvey,a16z2024llmflation}. In a multi-cloud environment, these levers also interact with placement and portability decisions, which determine how workloads are distributed across providers and pricing regimes \cite{petcu2013interoperability,closer2025maestro}.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\linewidth]{5-Figures/Chapter2/frugalgpt_tradeoff}
+    \caption{Accuracy and cost tradeoff achieved by FrugalGPT, showing that adaptive LLM cascades can reduce inference cost while maintaining or improving task performance. Adapted from Chen et al. \cite{chen2023frugalgpt}.}
+    \label{fig:frugalgpt-tradeoff}
+\end{figure}
