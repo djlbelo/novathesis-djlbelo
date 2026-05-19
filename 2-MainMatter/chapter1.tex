@@ -9,12 +9,22 @@
 \label{cha:introduction}
 
 %%------------------------------------------------------------
-%% SECTION: Context \& Description
+%% SECTION: Context & Motivation
 %%------------------------------------------------------------
-\section{Context \& Description}
-\label{sec:context-description}
+\section{Context \& Motivation}
+\label{sec:context-motivation}
 
-% TODO: Situate the research domain, scope, and main phenomena or questions you address. Give the reader enough background to understand what follows without yet arguing why your work is needed.
+As enterprise adoption of \gls{genai} transitions from exploratory pilots to sustained production use, organisations face a growing set of operational challenges that existing frameworks do not fully address. The rapid proliferation of \gls{llm}-based capabilities has exposed critical gaps in how intelligent applications are built, integrated, and governed in production environments: fragmented tool connectivity, limited cost visibility, and insufficient orchestration flexibility \cite{brown2020gpt3}.
+
+Maestro is a framework for enterprise \gls{genai} applications in multi-cloud environments, developed at Closer Consulting. It was conceived to address exactly these operational realities by providing a structured layer for deploying and managing \gls{genai} workloads across heterogeneous cloud infrastructure. Since Maestro is designed to be implemented across different production environments, the framework must be both adaptable and robust: it should accommodate diverse model providers, integration patterns, and infrastructure configurations without requiring fundamental redesign at each deployment.
+
+Despite this ambition, three concrete problems currently limit the framework's effectiveness in production. First, tool and service integration remains brittle. In the absence of a standardised connectivity protocol, each new data source or capability requires bespoke integration work, increasing development overhead and reducing portability across deployments \cite{anthropic2024mcp}. The \gls{mcp}, introduced by Anthropic in 2024, offers a compelling solution to this problem by defining a universal interface through which \gls{llm} hosts can discover and invoke external tools and resources \cite{anthropic2024mcp}. Integrating \gls{mcp} into Maestro would enable a plug-and-play connectivity model that scales across production environments without duplicating integration effort.
+
+Second, cost observability is severely constrained. In the current deployment context, \gls{llm} infrastructure costs are consolidated under shared cloud resources, with no segmentation by agent, workflow, or request type. This architectural reality makes it impossible to attribute expenditure to specific system components, which in turn prevents principled optimisation decisions. Without granular cost telemetry at the level of individual invocations, teams operating Maestro in production cannot identify inefficient patterns, enforce budget boundaries, or demonstrate the cost-effectiveness of \gls{genai} capabilities to stakeholders \cite{wu2022sustainable}. The absence of cost observability is not merely an inconvenience; it is a structural barrier to responsible scaling.
+
+Third, multi-agent orchestration within Maestro lacks the composability required to support complex, interdependent workflows. As \gls{genai} applications grow in scope, they increasingly require the coordination of specialised agents operating in parallel or in structured sequences. Current orchestration approaches do not provide sufficient primitives for expressing these dependencies reliably, which constrains the range of applications that can be built on top of the framework \cite{wang2023survey}.
+
+This dissertation addresses these three problems in a unified and operationally grounded manner. By extending Maestro with \gls{mcp}-based integration, a cost observability layer, and an improved multi-agent orchestration model, this work contributes both a set of concrete framework improvements and a methodology for evaluating production-oriented \gls{genai} infrastructure.
 
 
 %%------------------------------------------------------------
@@ -23,16 +33,26 @@
 \section{Institutional Context}
 \label{sec:institutional-context}
 
-% TODO: Describe the host institution, programme, funding, industrial partnership, or regulatory setting that frames the work, if relevant to how the problem is posed or validated.
+The research presented in this dissertation emerges from a partnership between the Department of Computer Science at NOVA School of Science and Technology (FCT NOVA) and Closer Consulting, which serves as the main industrial collaborator. As the author, I have assumed a dual capacity—both as an academic researcher and as an active practitioner within Closer Consulting—enabling unique integration of theoretical inquiry and practical implementation. 
+
+Closer Consulting is responsible for the design, development, and maintenance of the Maestro GenAI framework, which forms the technical foundation and primary case study for this work. Throughout the research process, I have been granted privileged access to Maestro’s production deployments, real-world cost telemetry, and multi-tenant enterprise configurations, facilitating a level of analysis and validation grounded in operational reality~\cite{closer2025maestro}.
+
+This collaboration extends beyond resource access, shaping the research agenda and ensuring that outcomes directly address genuine industry needs. All architectural decisions, implementation steps, and evaluation metrics have been established within the constraints and requirements of authentic enterprise environments, rather than exclusively through controlled laboratory experiments.
 
 
 %%------------------------------------------------------------
-%% SECTION: Motivation
+%% SECTION: Problem Statement
 %%------------------------------------------------------------
-\section{Motivation}
-\label{sec:motivation}
+\section{Problem Statement}
+\label{sec:Problem-Statement}
 
-% TODO: Explain the gap, limitation, or opportunity that drives this dissertation. Connect context to the concrete problem you tackle.
+Despite the growing maturity of enterprise \gls{genai} development, frameworks designed for production use continue to face a set of structural limitations that constrain their scalability, operational efficiency, and portability across deployment environments. This section identifies the three core challenges that motivate the present work, all of which are grounded in the operational reality of Maestro, a framework for enterprise \gls{genai} applications in multi-cloud environments developed at Closer Consulting \cite{closer2025maestro}.
+
+The first challenge concerns the standardisation of tool and service integration. Modern enterprise \gls{genai} systems are required to consume data from a wide variety of sources — databases, cloud services, analytics platforms, and enterprise APIs — across heterogeneous infrastructure. In Maestro's current architecture, each such integration is implemented as a bespoke connector, with no shared interface contract governing how tools and resources are discovered or invoked by the underlying \gls{llm} \cite{closer2025maestro}. This approach introduces significant friction: onboarding a new data source requires duplicated integration effort, integration logic is tightly coupled to the specific provider being consumed, and the resulting system is difficult to port across production environments without substantial rework. The \gls{mcp}, introduced by Anthropic in 2024, proposes a universal, open protocol that standardises how \gls{llm} hosts discover and invoke external tools and resources \cite{anthropic2024mcp, modelcontextprotocol2024}. However, the integration of \gls{mcp} into production-grade \gls{genai} frameworks — including the definition of reusable server implementations across cloud platforms — remains an open engineering challenge with limited empirical treatment in the literature.
+
+The second challenge concerns cost observability and operational efficiency. In the current deployment context of Maestro, \gls{llm} infrastructure costs are consolidated under shared cloud resources without segmentation by agent, workflow, or request type. This architectural reality means there is no mechanism to attribute expenditure to specific system components, which in turn prevents any principled decision-making about cost optimisation. Without granular cost telemetry at the level of individual invocations, it is not possible to identify inefficient request patterns, enforce budget boundaries per use case, or demonstrate the financial sustainability of \gls{genai} capabilities to stakeholders \cite{wu2022sustainable}. Beyond the absence of observability, the literature identifies a broader set of cost reduction techniques — including prompt compression \cite{jiang2023llmlingua, pan2024llmlingua2}, semantic caching \cite{bang2023gptcache}, dynamic model routing \cite{chen2023frugalgpt}, and \gls{rag} pipeline optimisation \cite{gao2023ragsurvey} — that have not been evaluated or implemented within the framework. The lack of both measurement infrastructure and applied optimisation represents a compounded barrier to responsible scaling in production \cite{a16z2024llmflation}.
+
+The third challenge concerns orchestration composability for multi-agent workflows. As \gls{genai} applications evolve from single-turn question-answering systems towards complex, multi-step reasoning pipelines, the need for robust multi-agent orchestration primitives becomes increasingly critical \cite{wang2023survey}. The current orchestration layer in Maestro consists of purpose-built, hand-rolled agents for specific tasks — sentiment analysis, session summarisation, relevance checking — implemented without a shared compositional model \cite{closer2025maestro}. This design limits the range of workflows that can be expressed, makes it difficult to introduce new capabilities without invasive changes to the orchestration logic, and provides no standard mechanism for inter-agent communication, tool delegation, or controlled parallelism. As a consequence, the framework cannot readily support the class of complex, interdependent multi-agent applications that are increasingly demanded in enterprise settings \cite{wang2023survey}.
 
 
 %%------------------------------------------------------------
@@ -41,7 +61,64 @@
 \section{Objectives}
 \label{sec:objectives}
 
-% TODO: State the main goal and, if useful, specific sub-objectives or research questions. Prefer measurable or verifiable formulations where possible.
+Four research objectives are defined to address the structural limitations
+identified in Section~\ref{sec:Problem-Statement}. Each objective is stated as a
+concrete, measurable outcome with an explicit success criterion and a designated
+primary toolset. Where validation has not yet been completed, hedged language is
+used to signal that the claimed outcome is a research hypothesis subject to
+empirical confirmation.
+
+\textbf{O1 — MCP server layer for Maestro.} The first objective is to design
+and implement an MCP-compliant server library that exposes Maestro's microservice
+capabilities through the Model Context Protocol~\cite{anthropic2024mcp}
+\cite{modelcontextprotocol2024}. The implementation will use the
+MCP specification \cite{modelcontextprotocol2024} as primary tooling. By replacing the current \(N \times M\)
+bespoke adapter structure with an \(N + M\) protocol-mediated architecture, it
+is hypothesised that integration complexity will decrease substantially as the
+service catalogue grows. The objective will be considered fulfilled when a
+representative set of heterogeneous service integrations has been validated under the new protocol layer.
+
+\textbf{O2 — Unified cost telemetry pipeline.} The second objective is to
+instrument Maestro's production orchestration layer with a unified LLM and
+infrastructure cost telemetry pipeline, providing the first such integration
+for this platform. Langfuse will serve as the LLM observability layer,
+capturing per-request token consumption, per-model cost, and cache hit rate at
+the invocation level. Azure Monitor will aggregate infrastructure-level signals
+via OpenTelemetry, creating a unified operational view across both LLM and
+compute dimensions. The objective will be considered fulfilled when LLM
+invocation paths receive systematic instrumentation and a representative
+production cost baseline has been established. This baseline is a prerequisite
+for the qualitative evaluation of O3.
+
+\textbf{O3 — Cost reduction via tokenomics optimisation.} The third objective
+is to evaluate and implement a set of cost-reduction techniques drawn from the
+three-layer tokenomics framework that structures the cost analysis of this
+thesis. Three complementary mechanisms will be applied: semantic caching via
+MongoDB Atlas Semantic Cache, cascade routing via LangChain model routing, and
+prompt compression via candidates like LLMLingua~\cite{jiang2023llmlingua}, TOON~\cite{toon2025}, and others.
+The target outcome is a measurable reduction in cost-per-query relative to the
+O2 baseline, with answer relevancy remaining qualitatively stable between the
+experimental and control conditions. The FrugalGPT cascade routing
+strategy~\cite{chen2023frugalgpt} and GPTCache semantic
+caching~\cite{bang2023gptcache} provide the conceptual grounding for the
+mechanisms evaluated here.
+
+\textbf{O4 — Composable agent graph orchestration.} The fourth objective is to
+refactor Maestro's orchestration layer using LangGraph as the primary
+orchestration runtime. LangGraph is selected for three reasons that are
+architecturally significant. First, Maestro already uses LangChain~\cite{chase2022langchain} in
+production; LangGraph is LangChain's native graph orchestration runtime, making
+it an extension of the existing stack rather than a replacement, and thereby
+minimising migration risk. Second, Azure AI Foundry natively hosts LangGraph
+agents, preserving alignment with the existing Azure infrastructure. Third,
+Langfuse integrates natively with LangGraph, meaning that O2 and O4 share the
+same instrumentation stack without additional tooling overhead — a deliberate
+architectural decision that eliminates the cost and complexity of maintaining
+parallel observability pipelines. The objective will be considered fulfilled
+when a representative set of multi-step production workflows has been refactored
+as composable LangGraph agent graphs, their execution steps receive systematic
+coverage by Langfuse traces, and the refactored implementations achieve a
+measurable reduction in code volume relative to their hand-crafted equivalents.
 
 
 %%------------------------------------------------------------
@@ -50,7 +127,36 @@
 \section{Expected Contribution}
 \label{sec:expected-contribution}
 
-% TODO: Summarise what this work is expected to add (theoretical, methodological, empirical, or practical) and for whom it matters.
+The work undertaken in pursuit of the four research objectives is expected to
+produce the following original contributions:
+
+\begin{itemize}
+
+    \item An open, protocol-compliant MCP server library for Maestro, enabling
+    standardised integration with cloud-native data services across Azure, AWS,
+    and GCP and reusable by any MCP-compliant agent framework.
+
+    \item A unified LLM and infrastructure cost telemetry pipeline — Langfuse
+    combined with Azure Monitor via OpenTelemetry — instrumented across
+    Maestro's production orchestration layer, constituting the first such
+    integration for this platform.
+
+    \item Empirical benchmarks of cost-reduction techniques — semantic caching,
+    LLM cascade routing, and prompt compression — evaluated on a real
+    multi-cloud, multi-tenant production environment, providing
+    ecologically valid estimates of technique efficacy that laboratory
+    settings cannot offer.
+
+    \item A reference architecture for composable, observable, and cost-aware
+    enterprise GenAI frameworks in multi-cloud environments, documented as a
+    reusable design pattern applicable beyond the Maestro platform.
+
+    \item A quantitative LLMOps baseline — comprising token cost, latency, and
+    quality metrics for a production RAG system — establishing a reproducible
+    evaluation methodology for future comparative studies in this domain.
+
+\end{itemize}
+
 
 
 %%------------------------------------------------------------

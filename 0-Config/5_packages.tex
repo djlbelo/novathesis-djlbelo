@@ -40,7 +40,16 @@
 
 \usepackage{paralist}     % To enable costumizable enumerates.  See the documentation.
 
+% marginfix: avoids margin-note vertical collisions that push \marginpar boxes sideways/off-page
+% (common when many \todo{} calls stack on one page, e.g. chapter 1 objectives).
+\usepackage{marginfix}
 \usepackage[textsize=footnotesize]{todonotes}  % To register TODO notes in the text
+\AtBeginDocument{%
+  \strictpagechecktrue
+  % Keep margin todos inside the trimmed page: default \marginparwidth is often too wide
+  % for the outer margin once TikZ borders and connector lines are included.
+  \setmarginnotes{\marginparsep}{0.85\marginparwidth}{\marginparpush}%
+}
 
 \usepackage{makecell}      % Multiline table cells and control vertical and horizontal alignment
 
