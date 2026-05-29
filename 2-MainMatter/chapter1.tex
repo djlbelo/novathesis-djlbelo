@@ -33,7 +33,7 @@ This dissertation addresses these three problems by proposing a unified and oper
 \section{Institutional Context}
 \label{sec:institutional-context}
 
-The research presented in this dissertation emerges from a partnership between the Department of Computer Science at NOVA School of Science and Technology (FCT NOVA) and Closer Consulting, which serves as the main industrial collaborator. As the author, I have assumed a dual role - both as an academic researcher and as an active practitioner within Closer Consulting - enabling unique integration of theoretical inquiry and practical implementation. 
+The research presented in this dissertation emerges from a partnership between the Department of Computer Science at NOVA School of Science and Technology (FCT NOVA) and Closer Consulting, which serves as the main industrial collaborator. As the author, I have assumed a dual role — both as an academic researcher and as an active practitioner within Closer Consulting — enabling unique integration of theoretical inquiry and practical implementation. 
 
 Closer Consulting is responsible for the design, development, and maintenance of the Maestro GenAI framework, which represents both the technical foundation and the core object of study of this work, functioning simultaneously as the starting point, the engineering substrate on which contributions are built, and the environment in which they are evaluated. Throughout the research process, I have been granted privileged access to Maestro's production deployments, operational cost telemetry, and multi-tenant enterprise configurations, facilitating a level of analysis and validation grounded in production conditions~\cite{closer2025maestro}.
 
@@ -48,10 +48,10 @@ This collaboration extends beyond resource access, shaping the research agenda a
 
 Despite the growing maturity of enterprise \gls{genai} development, frameworks designed for production use continue to face a set of structural limitations that constrain their scalability, operational efficiency, and portability across deployment environments. This section identifies the three core challenges that motivate the present work, all of which are grounded in the operational reality of Maestro, a framework for enterprise \gls{genai} applications in multi-cloud environments developed at Closer Consulting \cite{closer2025maestro}. Each challenge is mapped explicitly to one or more of the four research objectives stated in Section~\ref{sec:objectives}: Challenge~1 motivates O1, Challenge~2 motivates jointly O2 and O3, and Challenge~3 motivates O4.
 
-\paragraph{Challenge 1 - Fragmentation of connectivity (motivates O1).}
-The first challenge concerns the standardisation of tool and service integration. Modern enterprise \gls{genai} systems are required not only to consume data from a wide variety of sources - databases, cloud services, analytics platforms, and enterprise APIs - but also to integrate with the capabilities exposed by external technical tools and \glspl{api} across heterogeneous infrastructure. In Maestro's current architecture, every connection of this kind is implemented as a bespoke connector, with no shared interface contract governing how tools and resources are discovered or invoked by the underlying \gls{llm} \cite{closer2025maestro}. In the absence of such a shared protocol, integration effort is repeated for every new service, the resulting code becomes tightly coupled to the specific provider being consumed, and the system as a whole is difficult to port across deployments without substantial rework - undermining Maestro's multi-cloud design goals. The \gls{mcp}, introduced by Anthropic in 2024, proposes a universal, open protocol that standardises how \gls{llm} hosts discover and invoke external tools and resources \cite{anthropic2024mcp, modelcontextprotocol2024}. However, the integration of \gls{mcp} into production-grade \gls{genai} frameworks - including the definition of reusable client and server implementations across cloud platforms - remains an open engineering challenge with limited empirical treatment in the literature~\cite{thoughtworks_radar_2025,ieee_mcp_healthcare_2025}.
+\paragraph{Challenge 1 — Fragmentation of connectivity (motivates O1).}
+The first challenge concerns the standardisation of tool and service integration. Modern enterprise \gls{genai} systems are required not only to consume data from a wide variety of sources — databases, cloud services, analytics platforms, and enterprise APIs — but also to integrate with the capabilities exposed by external technical tools and \glspl{api} across heterogeneous infrastructure. In Maestro's current architecture, every connection of this kind is implemented as a bespoke connector, with no shared interface contract governing how tools and resources are discovered or invoked by the underlying \gls{llm} \cite{closer2025maestro}. In the absence of such a shared protocol, integration effort is repeated for every new service, the resulting code becomes tightly coupled to the specific provider being consumed, and the system as a whole is difficult to port across deployments without substantial rework — undermining Maestro's multi-cloud design goals. The \gls{mcp}, introduced by Anthropic in 2024, proposes a universal, open protocol that standardises how \gls{llm} hosts discover and invoke external tools and resources \cite{anthropic2024mcp, modelcontextprotocol2024}. However, the integration of \gls{mcp} into production-grade \gls{genai} frameworks — including the definition of reusable client and server implementations across cloud platforms — remains an open engineering challenge with limited empirical treatment in the literature~\cite{thoughtworks_radar_2025,ieee_mcp_healthcare_2025}.
 
-\paragraph{Challenge 2 - Absence of cost observability (motivates O2 and O3).}
+\paragraph{Challenge 2 — Absence of cost observability (motivates O2 and O3).}
 The second challenge concerns cost observability and operational efficiency. In the current deployment context of Maestro, \gls{llm} costs are consolidated under a shared cloud bill, with no detail per agent, workflow, or request type. The framework, as deployed today, performs no form of cost or token-consumption analysis: there is no mechanism to determine what costs most, no means of attributing expenditure to specific system components, and consequently no way to justify the investment in \gls{genai} capabilities to stakeholders \cite{wu2022sustainable}. Beyond this lack of segmentation, several technical dimensions of cost observability are also absent and are nonetheless essential for the projects built on top of the framework, namely:
 %
 \begin{enumerate}
@@ -62,10 +62,10 @@ The second challenge concerns cost observability and operational efficiency. In 
     \item time-series aggregation that supports budget enforcement, anomaly detection, and longitudinal cost trend analysis.
 \end{enumerate}
 %
-This absence is not merely a financial inconvenience: it is a structural barrier to making data-driven decisions about which optimisation techniques to apply. Without granular telemetry at the level of individual invocations it is impossible to characterise the production workload - query repetition rate, dominant prompt patterns, average completion length per agent, distribution of model usage - and therefore impossible to select cost-reduction techniques on principled grounds. For this reason, instrumentation (O2) is treated as a hard prerequisite for any cost-reduction work (O3) rather than as a parallel concern. The literature describes a broader set of techniques relevant to O3 - including prompt compression \cite{jiang2023llmlingua, pan2024llmlingua2}, semantic caching \cite{bang2023gptcache}, dynamic model routing \cite{chen2023frugalgpt}, and \gls{rag} pipeline optimisation \cite{gao2023ragsurvey} - none of which have been evaluated or implemented within Maestro. A subset of these techniques is later examined in this dissertation; the comparison with prior work is deferred to Chapter~\ref{cha:evaluation}, where the approach adopted here is positioned both qualitatively and, where measurements allow, quantitatively against the techniques discussed above. The combined lack of measurement infrastructure and applied optimisation represents a compounded barrier to responsible scaling in production \cite{a16z2024llmflation}.
+This absence is not merely a financial inconvenience: it is a structural barrier to making data-driven decisions about which optimisation techniques to apply. Without granular telemetry at the level of individual invocations it is impossible to characterise the production workload — query repetition rate, dominant prompt patterns, average completion length per agent, distribution of model usage — and therefore impossible to select cost-reduction techniques on principled grounds. For this reason, instrumentation (O2) is treated as a hard prerequisite for any cost-reduction work (O3) rather than as a parallel concern. The literature describes a broader set of techniques relevant to O3 — including prompt compression \cite{jiang2023llmlingua, pan2024llmlingua2}, semantic caching \cite{bang2023gptcache}, dynamic model routing \cite{chen2023frugalgpt}, and \gls{rag} pipeline optimisation \cite{gao2023ragsurvey} — none of which have been evaluated or implemented within Maestro. A subset of these techniques is later examined in this dissertation; the comparison with prior work is deferred to Chapter~\ref{cha:evaluation}, where the approach adopted here is positioned both qualitatively and, where measurements allow, quantitatively against the techniques discussed above. The combined lack of measurement infrastructure and applied optimisation represents a compounded barrier to responsible scaling in production \cite{a16z2024llmflation}.
 
-\paragraph{Challenge 3 - Orchestration without composability (motivates O4).}
-The third challenge concerns orchestration composability for multi-agent workflows. As \gls{genai} applications evolve from single-turn question-answering systems towards complex, multi-step reasoning pipelines, the need for robust multi-agent orchestration primitives becomes increasingly critical \cite{wang2023survey}. These can vary from simple sequence execution to complex conditional branching and parallel processing. Maestro's agents, however, have been built case by case - for sentiment analysis, session summarisation, relevance checking, and similar tasks - without a shared structural model \cite{closer2025maestro}. Adding new functionality therefore requires modifying existing code rather than composing new behaviour from reusable units, which limits the range of expressible workflows, prevents component reuse, and offers no standard mechanism for inter-agent communication, controlled parallelism, or delegation of subtasks across agents. Equally important, the current implementation provides no execution tracing of what each agent does at runtime: there is no per-step record of inputs, outputs, intermediate decisions, or tool invocations, which makes debugging and quality assurance disproportionately difficult in production and prevents any systematic analysis of where workflows succeed or fail. As a consequence, the framework cannot readily support the class of complex, interdependent multi-agent applications that are increasingly demanded in enterprise settings \cite{wang2023survey}.
+\paragraph{Challenge 3 — Orchestration without composability (motivates O4).}
+The third challenge concerns orchestration composability for multi-agent workflows. As \gls{genai} applications evolve from single-turn question-answering systems towards complex, multi-step reasoning pipelines, the need for robust multi-agent orchestration primitives becomes increasingly critical \cite{wang2023survey}. These can vary from simple sequence execution to complex conditional branching and parallel processing. Maestro's agents, however, have been built case by case — for sentiment analysis, session summarisation, relevance checking, and similar tasks — without a shared structural model \cite{closer2025maestro}. Adding new functionality therefore requires modifying existing code rather than composing new behaviour from reusable units, which limits the range of expressible workflows, prevents component reuse, and offers no standard mechanism for inter-agent communication, controlled parallelism, or delegation of subtasks across agents. Equally important, the current implementation provides no execution tracing of what each agent does at runtime: there is no per-step record of inputs, outputs, intermediate decisions, or tool invocations, which makes debugging and quality assurance disproportionately difficult in production and prevents any systematic analysis of where workflows succeed or fail. As a consequence, the framework cannot readily support the class of complex, interdependent multi-agent applications that are increasingly demanded in enterprise settings \cite{wang2023survey}.
 
 
 %%------------------------------------------------------------
@@ -91,15 +91,15 @@ the time of writing, hedged language is used deliberately to signal that the
 stated outcome is a research hypothesis subject to empirical confirmation, in
 keeping with the open, investigative posture adopted throughout this work.
 
-\textbf{O1 - MCP bidirectional integration.} The first objective is to
+\textbf{O1 — MCP bidirectional integration.} The first objective is to
 introduce, end-to-end, the \gls{mcp} into Maestro as a first-class
 connectivity primitive, with the framework acting both as a client and as a
 server of the protocol~\cite{anthropic2024mcp, modelcontextprotocol2024}. On
-the client side, Maestro will consume external MCP servers - such as MongoDB,
-Microsoft Learn, and Fabric MCP - without bespoke per-provider integration
+the client side, Maestro will consume external MCP servers — such as MongoDB,
+Microsoft Learn, and Fabric MCP — without bespoke per-provider integration
 code, relying solely on protocol-level discovery and invocation. On the server
-side, Maestro will expose its own core capabilities - including \gls{rag}
-query, document ingestion, and session summarisation - as protocol-compliant
+side, Maestro will expose its own core capabilities — including \gls{rag}
+query, document ingestion, and session summarisation — as protocol-compliant
 MCP tools that can be invoked by any external MCP-compatible agent. The
 implementation will use the Anthropic MCP SDK together with FastMCP as the
 primary tooling, and will be carried out on top of Maestro's current
@@ -112,7 +112,7 @@ valid MCP tools, consumable by at least one independent external client (for
 example, Claude Desktop or an external LangGraph
 agent~\cite{chase2022langchain}).
 
-\textbf{O2 - Unified cost telemetry pipeline.} The second objective is to
+\textbf{O2 — Unified cost telemetry pipeline.} The second objective is to
 instrument Maestro so that, for every \gls{llm} invocation, the platform
 automatically records cost, execution trace, and output quality, thereby
 producing the first quantitative baseline for the platform. To the best of the
@@ -132,7 +132,7 @@ cent deviation from the actual Azure billing invoice for the same period,
 validating the reliability of the baseline; and (iv) the production baseline
 is available before any O3 intervention begins.
 
-\textbf{O3 - Cost reduction via tokenomics optimisation.} The third objective
+\textbf{O3 — Cost reduction via tokenomics optimisation.} The third objective
 is to implement and empirically compare at least two complementary
 cost-reduction techniques, selected on the basis of the patterns identified in
 the O2 baseline rather than chosen a priori. The selection is therefore
@@ -143,7 +143,7 @@ compression via LLMLingua~\cite{jiang2023llmlingua}, semantic caching via
 MongoDB Atlas Semantic Cache or Azure Managed Redis (conceptually grounded in
 GPTCache~\cite{bang2023gptcache}), and cascade routing via LangChain model
 routing~\cite{chase2022langchain} (inspired by the FrugalGPT cascade
-strategy~\cite{chen2023frugalgpt}). To structure this analysis, a \emph{three-layer tokenomics framework} - presented in detail in Chapter~\ref{cha:design} will aim to decompose the cost of a \gls{genai}
+strategy~\cite{chen2023frugalgpt}). To structure this analysis, a \emph{three-layer tokenomics framework} — presented in detail in Chapter~\ref{cha:design} will aim to decompose the cost of a \gls{genai}
 invocation into the input layer (the tokens sent to the model), the model
 layer (the cost characteristics of the model that processes the request), and
 the output layer (the tokens returned to the caller); each candidate technique
@@ -152,13 +152,13 @@ fulfilled when (i) the selected techniques achieve a significant reduction in co
 answer relevancy scores via Two One-Sided Tests (TOST)~\cite{lakens_2017_tost} at $\alpha = 0.05$ with an equivalence margin of $\pm 0.05$; and (iii) the evaluation is conducted on real production
 queries, partitioned into a control group and an experimental group. TOST is
 adopted in preference to a standard two-sample $t$-test because the research
-question is one of equivalence - showing that the experimental and control
-distributions are sufficiently close to be considered indistinguishable -
+question is one of equivalence — showing that the experimental and control
+distributions are sufficiently close to be considered indistinguishable —
 whereas a non-significant $t$-test only fails to detect a difference and
 cannot, on its own, support a positive claim of quality
 preservation~\cite{lakens_scheel_isager_2018}.
 
-\textbf{O4 - Composable agent graph orchestration.} The fourth objective is
+\textbf{O4 — Composable agent graph orchestration.} The fourth objective is
 to refactor Maestro's agents as reusable, testable
 LangGraph~\cite{chase2022langchain} graphs, sharing the same observability
 stack as O2. LangGraph is selected for three reasons that are architecturally
@@ -168,12 +168,12 @@ making it an extension of the existing stack rather than a replacement, and
 thereby minimising migration risk. Second, Azure AI Foundry natively hosts
 LangGraph agents, preserving alignment with the existing Azure infrastructure.
 Third, Langfuse integrates natively with LangGraph, so that O2 and O4 share a
-single observability stack - a deliberate architectural decision that
+single observability stack — a deliberate architectural decision that
 eliminates the cost and complexity of maintaining parallel observability
 pipelines, rather than a limitation imposed by tooling. The objective will be
 considered fulfilled when (i) at least two production workflows have been
-refactored as LangGraph graphs with structurally distinct topologies - one
-sequential and one with conditional branching or parallelism - demonstrating
+refactored as LangGraph graphs with structurally distinct topologies — one
+sequential and one with conditional branching or parallelism — demonstrating
 that the LangGraph pattern is expressive enough for diverse real-world cases;
 (ii) trace coverage of at least eighty per cent of execution steps is achieved
 via Langfuse; (iii) a reduction of at least thirty per cent in lines of code
@@ -207,7 +207,7 @@ original contributions:
     \item \textbf{Empirical benchmarks of cost-reduction techniques.} A
     statistically rigorous evaluation (TOST, $\alpha = 0.05$) of at least two
     tokenomics techniques selected on the basis of production usage patterns,
-    conducted on real production queries - providing ecologically valid
+    conducted on real production queries — providing ecologically valid
     efficacy estimates that controlled laboratory settings cannot replicate.
 
     \item \textbf{Quantitative \gls{llmops} baseline.} A production-derived
@@ -220,7 +220,7 @@ original contributions:
     cost-aware GenAI frameworks.} A documented design pattern for enterprise
     \gls{genai} orchestration in multi-cloud environments, comprising
     composable LangGraph agent graphs, a shared Langfuse and OpenTelemetry
-    observability stack, and data-driven cost optimisation - applicable
+    observability stack, and data-driven cost optimisation — applicable
     beyond the Maestro platform.
 
 \end{itemize}
