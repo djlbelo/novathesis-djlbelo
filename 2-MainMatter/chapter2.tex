@@ -23,41 +23,13 @@ via neural networks, and the Transformer architecture based solely on attention.
 \subsection{Distributed Word Representations}
 \label{sec:word2vec}
 
-Prior to 2013, natural language processing relied predominantly on sparse,
-high-dimensional representations such as one-hot encodings, which offered no
-intrinsic notion of semantic similarity. Mikolov et
-al.~\cite{mikolov2013word2vec} addressed this with Word2Vec, an efficient
-framework for learning continuous vector representations of words from large
-unlabelled corpora. The model is trained through a self-supervised prediction
-task using one of two architectures: Continuous Bag-of-Words (CBOW), which
-predicts a target word from its context, or Skip-gram, which performs the
-inverse prediction.
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/skipgram-architecture}
-    \caption{CBOW and Skip-gram architectures of the Word2Vec framework. Adapted from~\cite{mikolov2013word2vec}.}
-    \label{fig:skipgram}
-\end{figure}
-
-The resulting word embeddings encode both syntactic and semantic structure
-in a dense vector space, enabling linear algebraic operations over meaning -
-most notably the well-known relationship \(\vec{king} - \vec{man} + \vec{woman}
-\approx \vec{queen}\).
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/king-queen-embedding}
-    \caption{Word vector space learned by Word2Vec, illustrating semantic analogies such as $\vec{king} - \vec{man} + \vec{woman} \approx \vec{queen}$. Adapted from~\cite{mikolov2013word2vec}.}
-    \label{fig:word2vec}
-\end{figure}
-
-By demonstrating that semantic similarity can be captured as geometric proximity
-in a continuous vector space, Word2Vec turned the distributional hypothesis into
-an actionable engineering principle. This insight directly underlies modern
-embedding models and vector databases, central components of
-Retrieval-Augmented Generation (RAG) pipelines~\cite{lewis2020rag}, and thus the
-quality and cost of the embedding stage in the Maestro framework's RAG pipeline.
+Dense word representations, established by Mikolov et al.~\cite{mikolov2013word2vec},
+demonstrated that semantic similarity can be captured as geometric proximity
+in a learned continuous vector space - a principle that directly underlies
+the embedding models and vector databases central to modern RAG pipelines.
+This representational substrate informs the quality and cost of the embedding
+stage in the Maestro framework's RAG pipeline, where the choice of embedding
+model has direct implications for retrieval precision and token expenditure.
 
 \subsection{The Transformer Architecture}
 \label{sec:transformer}
@@ -91,13 +63,6 @@ added to the input embeddings to compensate for the architecture's permutation
 invariance. The resulting model achieved 28.4 BLEU on the WMT 2014
 English-to-German benchmark, surpassing all prior approaches at a fraction of
 the training compute~\cite{vaswani2017attention}.
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.50\textwidth]{5-Figures/Chapter2/transformer}
-    \caption{Full Transformer architecture with encoder and decoder stacks. Adapted from~\cite{vaswani2017attention}.}
-    \label{fig:transformer}
-\end{figure}
 
 The Transformer's parallelism over sequence positions unlocked a new scaling
 regime. Derived architectures - encoder-only models such as
@@ -271,39 +236,6 @@ independent BERT encoders, and (ii)~a \emph{generator} $p_\theta(y_i \mid x, z,
 y_{1:i-1})$, implemented as BART-large~\cite{lewis2020bart}, which conditions its
 output on the concatenation of the query $x$ and retrieved passages $z$.
 
-Formally, the top-$K$ passages are selected by solving a Maximum Inner Product
-Search (MIPS) problem over a pre-indexed Wikipedia corpus of 21~million
-100-word chunks:
-%
-\begin{equation}
-    p_\eta(z \mid x) \;\propto\; \exp\!\left( d(z)^\top q(x) \right),
-    \quad d(z) = \mathrm{BERT}_d(z),\; q(x) = \mathrm{BERT}_q(x).
-\end{equation}
-%
-Two marginalization strategies over the latent document variable $z$ are
-proposed. In \emph{RAG-Sequence}, a single retrieved document is assumed
-responsible for the entire output sequence:
-%
-\begin{equation}
-    p_{\mathrm{RAG\text{-}Seq}}(y \mid x)
-    \;\approx\;
-    \sum_{z \,\in\, \mathrm{top\text{-}}k}
-    p_\eta(z \mid x)\;
-    \prod_{i}^{N} p_\theta(y_i \mid x, z, y_{1:i-1}).
-\end{equation}
-%
-In \emph{RAG-Token}, a distinct document may be selected at each generation step,
-enabling the generator to synthesize content from multiple retrieved passages:
-%
-\begin{equation}
-    p_{\mathrm{RAG\text{-}Token}}(y \mid x)
-    \;\approx\;
-    \prod_{i}^{N}
-    \sum_{z \,\in\, \mathrm{top\text{-}}k}
-    p_\eta(z \mid x)\;
-    p_\theta(y_i \mid x, z, y_{1:i-1}).
-\end{equation}
-%
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/rag-retriever-BART-MIPS}
@@ -317,15 +249,7 @@ supervision on which documents to retrieve. The document encoder and its FAISS
 index are frozen during fine-tuning; only the query encoder and BART generator
 are updated, substantially reducing cost.
 
-Empirically, RAG established state-of-the-art results on three open-domain
-question answering benchmarks - Natural Questions (44.5 EM), WebQuestions (45.2
-EM), and CuratedTrec (52.2 EM) - outperforming both parametric seq2seq baselines
-(e.g.,\ T5-11B) and task-specific retrieve-and-extract systems~\cite{lewis2020rag}.
-On Jeopardy question generation, human evaluators rated RAG outputs more factual
-than BART in 42.7\% of trials versus 7.1\% favouring BART. An index-hotswapping
-experiment further showed that replacing the document index updates the model's
-world knowledge without retraining, a property of practical significance for
-production deployments.
+RAG established state-of-the-art results on open-domain question answering benchmarks, outperforming both parametric seq2seq baselines and task-specific retrieve-and-extract systems~\cite{lewis2020rag}. An index-hotswapping experiment further showed that replacing the document index updates the model's world knowledge without retraining, a property of practical significance for production deployments.
 
 % ------------------------------------------------------------
 \subsection{Architectural Evolution: Naive, Advanced, and Modular RAG}
@@ -346,158 +270,36 @@ contemporary systems can be evaluated.
 \end{figure}
 
 \paragraph{Naive RAG.}
-The earliest post-ChatGPT implementations follow a minimal
-\emph{Retrieve-then-Read} pipeline of three steps: (1)~\emph{indexing}, where
-documents are chunked, encoded, and stored in a vector database;
-(2)~\emph{retrieval}, where the top-$K$ chunks most similar to the query are
-identified via cosine similarity; and (3)~\emph{generation}, where the query and
-retrieved chunks form a prompt for the language model~\cite{gao2023ragsurvey}.
-While effective in simple scenarios, Naive RAG exhibits well-characterized
-failure modes: low retrieval precision from semantic gaps, context-window
-saturation from uninformative passages, and hallucinations when the generator
-defaults to parametric knowledge amid noisy context.
+The earliest implementations follow a minimal \emph{Retrieve-then-Read} pipeline: documents are chunked, encoded, and stored in a vector database; the top-$K$ chunks most similar to the query are retrieved via cosine similarity; and the query and retrieved chunks form a prompt for the language model~\cite{gao2023ragsurvey}. While effective in simple scenarios, Naive RAG exhibits well-characterized failure modes: low retrieval precision from semantic gaps, context-window saturation from uninformative passages, and hallucinations when the generator defaults to parametric knowledge amid noisy context.
 
 \paragraph{Advanced RAG.}
-Advanced RAG introduces targeted pre- and post-retrieval interventions to
-address the precision and coherence limitations of the naive
-approach~\cite{gao2023ragsurvey}. Pre-retrieval strategies include query
-rewriting, query expansion into sub-questions, and \emph{Hypothetical Document
-Embeddings} (HyDE), where the model generates a hypothetical answer whose
-embedding retrieves semantically closer passages. Post-retrieval strategies
-include cross-encoder reranking and context compression to eliminate redundant
-content before generation. Indexing enhancements - sliding-window chunking,
-fine-grained segmentation, and metadata attachment - further improve recall and
-temporal awareness. These modifications retain the linear Retrieve-then-Read
-structure while substantially improving generation quality.
+Advanced RAG introduces targeted pre- and post-retrieval interventions to address precision and coherence limitations~\cite{gao2023ragsurvey}. Pre-retrieval strategies include query rewriting and expansion into sub-questions; post-retrieval strategies include cross-encoder reranking and context compression to eliminate redundant content before generation. These modifications retain the linear Retrieve-then-Read structure while substantially improving generation quality.
 
 \paragraph{Modular RAG.}
-Modular RAG supersedes the fixed pipeline by decomposing the system into
-composable functional modules: \emph{Search}, \emph{Memory}, \emph{Routing},
-\emph{Predict}, and \emph{Task Adapter}~\cite{gao2023ragsurvey}. This supports
-non-sequential execution, including iterative retrieval loops (e.g.,\
-ITER-RETGEN~\cite{shao2023iterretgen}), adaptive retrieval triggered by
-generation uncertainty (e.g.,\ FLARE~\cite{jiang2023flare}), and self-reflective
-retrieval (e.g.,\ Self-RAG~\cite{asai2023selfrag}). The design also enables
-integration with complementary techniques - fine-tuning the retriever, the
-generator, or both - without architectural changes. Gao et
-al.~\cite{gao2023ragsurvey} position Modular RAG as the current frontier, whose
-flexibility allows orchestration patterns that static pipelines cannot
-accommodate.
-
-A practical implication is that RAG and fine-tuning are not mutually exclusive.
-RAG excels where knowledge must be updated frequently and interpretable
-provenance is required, whereas fine-tuning suits stylistic adaptation or the
-internalization of domain-specific reasoning. In knowledge-intensive tasks, Gao
-et al.~\cite{gao2023ragsurvey} report that RAG consistently outperforms
-unsupervised fine-tuning, on both pre-training knowledge and novel facts.
+Modular RAG supersedes the fixed pipeline by decomposing the system into composable functional modules: \emph{Search}, \emph{Memory}, \emph{Routing}, \emph{Predict}, and \emph{Task Adapter}~\cite{gao2023ragsurvey}. This supports non-sequential execution patterns, including iterative, adaptive, and self-reflective retrieval patterns~\cite{gao2023ragsurvey}. Gao et al.~\cite{gao2023ragsurvey} position Modular RAG as the current frontier, whose flexibility allows orchestration patterns that static pipelines cannot accommodate.
 
 % ------------------------------------------------------------
-\subsection{Dense Semantic Retrieval: Sentence-BERT}
+\subsection{Dense Semantic Retrieval and LlamaIndex}
 \label{subsec:sbert}
 
-% Motivates SBERT over vanilla BERT for large-scale semantic search
-% (O(n^2) → O(1) lookup); describes Siamese/triplet architecture and the
-% three training objectives; connects to embedding models used in RAG pipelines.
-The retrieval component of a RAG pipeline depends critically on the quality and
-tractability of sentence-level embeddings. Vanilla BERT is unsuitable for
-large-scale semantic search: because it processes sentence pairs jointly through
-a cross-attention encoder, finding the most similar pair among $n$~sentences
-requires $\mathcal{O}(n^2)$ inference passes - approximately 65~hours for $n =
-10{,}000$~\cite{reimers2019sbert}. Moreover, averaging BERT token embeddings or
-using the \texttt{[CLS]} output yields representations that underperform even
-GloVe on semantic textual similarity (STS) tasks, owing to BERT's lack of
-explicit metric learning for sentence geometry.
+Efficient semantic retrieval requires fixed-size sentence embeddings amenable
+to fast similarity search. Reimers and Gurevych~\cite{reimers2019sbert}
+addressed this with Sentence-BERT (SBERT), which modifies BERT using Siamese
+network structures and mean-pooling to produce embeddings comparable via
+cosine similarity. By decoupling encoding from comparison, SBERT reduces
+pairwise sentence comparison from approximately 65 hours to under 5 seconds
+for a 10,000-sentence corpus, making large-scale semantic search tractable in
+production RAG systems~\cite{reimers2019sbert}.
 
-Reimers and Gurevych~\cite{reimers2019sbert} address this by introducing
-\emph{Sentence-BERT} (SBERT), a modification using Siamese and triplet network
-structures to produce fixed-size, semantically meaningful sentence embeddings
-amenable to efficient cosine-similarity comparison.
-
-\begin{figure}[htbp]
-    \centering
-    \begin{minipage}[t]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{5-Figures/Chapter2/sbert-network-anchor-positive-negative}
-        \label{fig:sbert-triplet}
-    \end{minipage}\hfill
-    \begin{minipage}[t]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{5-Figures/Chapter2/sbert-class-regress}
-        \label{fig:sbert-objectives}
-    \end{minipage}
-    \caption{
-        (Left) SBERT Siamese network architecture with triplet loss objective.
-        (Right) Classification and regression training objectives of SBERT.
-        Adapted from~\cite{reimers2019sbert}.
-    }
-\end{figure}
-
-The architecture passes each sentence independently through a shared BERT
-encoder, then mean-pools the output token embeddings into single vectors
-$\mathbf{u}$ and $\mathbf{v}$ for a sentence pair. Three training objectives are
-supported, depending on the available supervision:
-%
-\begin{itemize}
-    \item \textbf{Classification objective} (for NLI corpora): a softmax
-    classifier over the concatenation $[\mathbf{u};\, \mathbf{v};\,
-    |\mathbf{u} - \mathbf{v}|]$ trained to predict entailment, contradiction, or
-    neutral labels.
-    \item \textbf{Regression objective} (for STS corpora): cosine-similarity
-    between $\mathbf{u}$ and $\mathbf{v}$ optimized with mean-squared error
-    against human-annotated similarity scores.
-
-    \item \textbf{Triplet objective}: a margin-based ranking loss that ensures the
-    anchor embedding $\mathbf{a}$ is closer to a positive $\mathbf{p}$ than to a
-    negative $\mathbf{n}$ by a margin $\epsilon$:
-    %
-    \begin{equation}
-        \mathcal{L}_{\mathrm{triplet}}
-        = \max\!\left(
-            \|\mathbf{a} - \mathbf{p}\| - \|\mathbf{a} - \mathbf{n}\| + \epsilon,\;0
-          \right).
-    \end{equation}
-\end{itemize}
-%
-The Siamese design decouples encoding from comparison: document embeddings are
-computed once at indexing time, reducing query-time inference to a single forward
-pass plus a nearest-neighbor lookup. This cuts the 65-hour pairwise comparison to
-roughly 5 seconds for a 10,000-sentence corpus, while preserving or improving
-BERT's STS accuracy~\cite{reimers2019sbert}: SBERT gains 11~Spearman points over
-InferSent and 5~over Universal Sentence Encoder.
-
-% ------------------------------------------------------------
-\subsection{Connection to LlamaIndex}
-\label{subsec:rag_llamaindex}
-
-% Maps the theoretical RAG contributions above onto LlamaIndex abstractions:
-% ingestion → SentenceSplitter, embedding → SBERT-compatible models,
-% retrieval → VectorStoreIndex MIPS, advanced patterns → RouterQueryEngine
-% and ReActAgent. Positions LlamaIndex as a production-grade Modular RAG system.
-The contributions reviewed above map directly onto LlamaIndex, the framework
-employed in this work. LlamaIndex operationalizes the RAG pipeline of Lewis et
-al.~\cite{lewis2020rag} through a modular architecture separating ingestion,
-indexing, retrieval, and synthesis~\cite{liu2022llamaindex}. During
-\emph{ingestion}, \texttt{SimpleDirectoryReader} loads documents that
-\texttt{SentenceSplitter} segments into overlapping chunks - a direct
-implementation of the Advanced RAG chunking strategies of Gao et
-al.~\cite{gao2023ragsurvey}. The resulting nodes are encoded via a configurable
-embedding model (\texttt{Settings.embed\_model}), defaulting to OpenAI's
-\texttt{text-embedding-3-small} but readily replaced by any SBERT-compatible
-HuggingFace model (e.g.,\ \texttt{BAAI/bge-small-en-v1.5}), whose architecture
-descends from the Siamese paradigm of Reimers and
-Gurevych~\cite{reimers2019sbert}.
-
-At query time, \texttt{VectorStoreIndex} retrieves the top-$K$ nodes via cosine
-similarity - the same MIPS formulation as DPR in~\cite{lewis2020rag} - and passes
-them with the query to the language model for synthesis. The framework further
-exposes advanced patterns consistent with the Modular RAG taxonomy of Gao et
-al.~\cite{gao2023ragsurvey}: \texttt{RouterQueryEngine} routes semantically to
-sub-indexes; reranking modules (e.g.,\ \texttt{SentenceTransformerRerank}) apply
-cross-encoder scoring; and iterative retrieval agents can be composed from
-\texttt{ReActAgent}. LlamaIndex thus provides a production-grade instantiation of
-the entire RAG design space surveyed by Gao et al.~\cite{gao2023ragsurvey},
-grounded in the dense retrieval foundations of Lewis et al.~\cite{lewis2020rag}
-and Reimers and Gurevych~\cite{reimers2019sbert}.
+LlamaIndex~\cite{liu2022llamaindex} operationalises the full RAG design space
+surveyed by Gao et al.~\cite{gao2023ragsurvey} through a modular architecture
+separating ingestion, indexing, retrieval, and synthesis. Its
+\texttt{VectorStoreIndex} retrieves nodes via cosine similarity - the same
+MIPS formulation as DPR~\cite{lewis2020rag} - and exposes advanced retrieval
+patterns including semantic routing, cross-encoder reranking, and iterative
+retrieval agents. In this work, LlamaIndex serves as the RAG runtime within
+the Maestro framework, and the choice of embedding model directly determines
+both retrieval quality and per-query token cost.
 
 %%------------------------------------------------------------
 %% SECTION: Frameworks, MCP and Maestro
@@ -764,56 +566,7 @@ interoperability axis prescribes~\cite{closer2025maestro}.
 \subsection{Infrastructure as Code: Research Landscape and Practice}
 \label{subsec:iac}
 
-Infrastructure as Code (IaC) is the practice of expressing the configuration and
-provisioning of computing infrastructure - virtual machines, networks, storage,
-and managed services - as machine-readable, version-controlled source files
-interpreted by a provisioning engine, rather than as manual operator procedures.
-As cloud adoption accelerated, IaC became the primary mechanism for making
-infrastructure reproducible, auditable, and amenable to code review and automated
-testing.
-
-\cite{rahman2019iac} conducted a systematic mapping study of the IaC research
-landscape, identifying 32 peer-reviewed publications across six databases. They
-distilled four topics defining the field's research agenda: (i) \emph{frameworks
-and tools}, the design of provisioning engines and domain-specific languages;
-(ii) \emph{use in practice}, adoption patterns and DevOps integration; (iii)
-\emph{empirical studies}, analyses of defect prevalence, security flaws, and
-quality metrics in IaC scripts; and (iv) \emph{testing}, validating
-specifications prior to deployment~\cite{rahman2019iac}. A notable finding is that
-empirical research and testing remained underexplored relative to tool-focused
-contributions - a gap this dissertation partially addresses by empirically
-evaluating the cost and operational consequences of IaC-governed multi-cloud
-GenAI deployments.
-
-Rahman et al.\ further observed that Ansible, Chef, Puppet, and Terraform were the
-dominant tools, and that IaC research was growing with cloud adoption. Their
-characterization of IaC as a practice that ``automatically configures system
-dependencies and provisions local and remote instances'' captures its role in
-Maestro~\cite{rahman2019iac}: the infrastructure layer is managed via
-OpenTofu~\cite{closer2025maestro}, the Linux Foundation-governed fork of
-HashiCorp Terraform, falling squarely within the tool-focused and empirical
-categories Rahman et al.\ identify as core research vectors.
-
-OpenTofu operates declaratively: practitioners specify the desired state of
-resources - virtual networks, container registries, managed Kubernetes clusters,
-secret stores, monitoring workspaces - and the engine computes a
-dependency-ordered plan to converge actual state toward the target. The provider
-model maps directly onto the multi-cloud architecture above: a single
-configuration references Azure, AWS, and GCP provider plugins simultaneously,
-each resource block scoped through namespace qualification. Because the provider
-abstraction insulates declarations from the API differences documented by
-Petcu~\cite{petcu2013interoperability}, operator-facing configuration remains
-uniform regardless of host cloud - essential for a framework that spans multiple
-providers.
-
-The declarative approach further enables two properties relevant to this work's
-objectives. It provides \emph{environment reproducibility}: the configuration
-provisioning a staging environment can instantiate an identical topology in
-production or a second region, eliminating configuration drift. It also
-establishes a \emph{cost-attribution surface}: because every resource is declared
-in versioned code, cost anomalies can be traced to specific changes through
-commit history, supporting the FinOps disciplines of budget forecasting and spend
-attribution central to this work~\cite{armbrust2010view, closer2025maestro}.
+Infrastructure as Code (IaC) is the practice of expressing computing infrastructure configuration as version-controlled, machine-readable source files interpreted by a provisioning engine, rather than manual operator procedures~\cite{rahman2019iac}. The declarative approach - where practitioners specify the desired end state and the engine computes convergence - is the dominant paradigm, contrasting with imperative scripting that sequences explicit provisioning steps. Rahman et al.~\cite{rahman2019iac} systematically mapped the IaC research landscape, identifying reproducibility, empirical quality assessment, and automated testing as its defining concerns. In the Maestro framework, infrastructure is provisioned via OpenTofu - the Linux Foundation-governed fork of HashiCorp Terraform - which manages virtual networks, container registries, managed Kubernetes clusters, and model endpoints across Azure, AWS, and GCP through a single declarative configuration~\cite{closer2025maestro}. Reproducible, version-controlled infrastructure further enables consistent cost attribution across environments: every resource is declared in commit history, allowing cost anomalies to be traced to specific changes and supporting the FinOps disciplines of budget forecasting and spend attribution central to this work~\cite{armbrust2010view, closer2025maestro}.
 
 %%------------------------------------------------------------
 %% SECTION: Cost Optimization
@@ -821,11 +574,11 @@ attribution central to this work~\cite{armbrust2010view, closer2025maestro}.
 \section{Cost Optimization}
 \label{sec:cost-optimization}
 
-The economic profile of LLM systems is dominated by inference costs that scale with the number of tokens processed, the model's capability tier, and the frequency of invocation. In multi-cloud deployments these costs accumulate across providers and workloads, making cost optimization a first-class architectural concern rather than a post-hoc adjustment \cite{armbrust2010view,petcu2013interoperability,closer2025maestro}. This section surveys five complementary technique classes - semantic caching, model cascades, prompt compression, reranking, and prompt caching - and the market context shaping their impact.
+The economic profile of LLM systems is dominated by inference costs that scale with the number of tokens processed, the model's capability tier, and the frequency of invocation. In multi-cloud deployments these costs accumulate across providers and workloads, making cost optimization a first-class architectural concern rather than a post-hoc adjustment \cite{armbrust2010view,petcu2013interoperability,closer2025maestro}. This section surveys four complementary technique classes - semantic caching, model cascades, prompt compression, and prompt caching - and the market context shaping their impact.
 
 All of these mechanisms reduce a system's \emph{effective token cost}. Some reduce the tokens reaching a model (prompt compression, reranking), others reduce the number of model calls (semantic caching, prompt caching), and others reduce the marginal cost per call by routing to cheaper models (LLM cascades). In a multi-cloud setting they compose with provider-specific pricing to determine the realized cost of a workload \cite{gao2023ragsurvey,closer2025maestro}.
 
-A unifying lens is \emph{tokenomics}: minimising token consumption relative to the semantic value delivered per inference call. The token is the atomic economic primitive of LLM systems - every capability is ultimately paid for in tokens whose price is governed by scaling-law dynamics \cite{brown2020gpt3}. Because the cost-accuracy trade-off can be shaped by architectural choice, as FrugalGPT demonstrates by achieving GPT-4-level accuracy at a fraction of its cost via adaptive routing \cite{chen2023frugalgpt}, tokenomics is a systems-design discipline, not merely a pricing concern. Market forces alone are insufficient: token prices have fallen substantially \cite{a16z2024llmflation}, yet total inference spend keeps growing as prompts and usage expand. Each technique surveyed here is thus a composable lever over a shared cost function, operating at one of three layers: the \emph{model layer} (cascade routing and dynamic model selection), the \emph{retrieval layer} (reranking and caching), and the \emph{representation layer} (prompt compression, output style, and data serialisation).
+A unifying lens is \emph{tokenomics}: minimising token consumption relative to the semantic value delivered per inference call. The token is the atomic economic primitive of LLM systems - every capability is ultimately paid for in tokens whose price is governed by scaling-law dynamics \cite{brown2020gpt3}. Because the cost-accuracy trade-off can be shaped by architectural choice, as FrugalGPT demonstrates by achieving GPT-4-level accuracy at a fraction of its cost via adaptive routing \cite{chen2023frugalgpt}, tokenomics is a systems-design discipline, not merely a pricing concern. Market forces alone are insufficient: token prices have fallen substantially \cite{a16z2024llmflation}, yet total inference spend keeps growing as prompts and usage expand. Each technique surveyed here is thus a composable lever over a shared cost function, operating at one of three layers: the \emph{model layer} (cascade routing and dynamic model selection), the \emph{retrieval layer} (reranking and caching), and the \emph{representation layer} (prompt compression, output style, and data serialisation). Advanced RAG pipelines further employ cross-encoder reranking as a post-retrieval precision mechanism; while not a primary implementation target in this work, reranking complements caching and compression by reducing the number of low-relevance tokens forwarded to the generator, thereby operating on the representation layer of the tokenomics framework~\cite{gao2023ragsurvey}.
 
 \subsection{Semantic Caching}
 \label{subsec:semantic-caching}
@@ -833,13 +586,6 @@ A unifying lens is \emph{tokenomics}: minimising token consumption relative to t
 Semantic caching is motivated by the observation that many production queries are not unique: users repeat, rephrase, or follow up on earlier requests. Traditional caches such as Redis match exact keys and cannot exploit semantic similarity, so even minor paraphrases miss. GPTCache addresses this with an open-source \emph{semantic} cache that stores responses and retrieves them via embedding-based similarity search rather than exact-string matching \cite{bang2023gptcache}.
 
 Its architecture is straightforward. Incoming queries are encoded - along with stored queries and responses - into embeddings using a model compatible with vector databases such as Milvus or other ANN indexes \cite{bang2023gptcache}. A nearest-neighbour search determines whether a semantically similar query was already answered; if similarity exceeds a configurable threshold, the cached answer is returned. Only on a miss is the request forwarded to the LLM, and the new query–response pair inserted for future reuse \cite{bang2023gptcache}.
-
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=\linewidth]{5-Figures/Chapter2/gptcache_architecture}
-    \caption{Architecture of GPTCache as a semantic caching layer for LLM applications, showing the adapter, pre-processor, embedding generator, cache manager, similarity evaluator, and post-processor. Adapted from Bang et al. \cite{bang2023gptcache}.}
-    \label{fig:gptcache-architecture}
-\end{figure}
 
 Empirically, when integrated with OpenAI's GPT services, cache hits increase response speed by 2–10$\times$ while insulating the application from network and provider-side latency spikes \cite{bang2023gptcache}. Because an embedding lookup costs negligibly compared to a full LLM call, even a modest hit rate yields tangible API savings - particularly for enterprise assistants, FAQ bots, and RAG systems where queries repeat strongly across tenants and time \cite{bang2023gptcache,closer2025maestro}.
 
@@ -881,23 +627,10 @@ The most academically grounded software-layer approach is the LLMLingua family. 
     \label{fig:llmlingua-pipeline}
 \end{figure}
 
-\subsection{Reranking Efficiency}
-\label{subsec:reranking-efficiency}
-
-Reranking improves retrieval efficiency and quality, which indirectly affects cost by shaping how much context enters the prompt. In naive RAG, the top-$k$ documents from a vector search are concatenated with the query and fed to the LLM - brittle because too small a $k$ omits relevant information while too large a $k$ yields long, noisy prompts that raise cost and hallucination risk \cite{lewis2020rag,gao2023ragsurvey}.
-
-Advanced RAG adds a reranking stage: an initial dense retriever proposes a candidate set, and a more expensive cross-encoder re-scores it to select a smaller, higher-precision subset for the prompt \cite{gao2023ragsurvey}. This shifts cost from the generator to the retriever - spending controlled compute upfront to filter rather than asking the LLM to ignore irrelevant passages in a long prompt. Measured in effective token cost, reranking can therefore be cheaper than inference-time reasoning over large contexts.
-
-In this work, reranking can be a dedicated microservice in the RAG subsystem: the vector store returns a larger candidate set (e.g., $k=50$), reranked by a cross-encoder such as a Sentence-BERT variant fine-tuned for passage relevance, before selecting a smaller subset (e.g., $m=5$–$10$) for the prompt \cite{reimers2019sbert,liu2022llamaindex}. This improves evidence quality while keeping prompt size - and thus generation cost - under control \cite{gao2023ragsurvey,closer2025maestro}.
-
 \subsection{Prompt Caching}
 \label{subsec:prompt-caching}
 
-Prompt caching is a complementary mechanism recently introduced at the API layer by major providers: repeated prompt prefixes - long system prompts, policy text, or shared instructions - are cached provider-side and billed at a discount when reused. Anthropic's MCP ecosystem and related documentation describe prompt caching as part of a broader effort to standardize how hosts and tools expose context, including efficient reuse of stable prompt templates \cite{anthropic2024mcp,modelcontextprotocol2024}.
-
-Prompt caching differs from semantic caching in two respects. It operates on \emph{exact} prefix reuse rather than semantic similarity - the cached segment must be identical for the discount to apply - and it does not bypass inference but makes the repeated portion cheaper while processing the new suffix at full price. This is attractive for enterprise assistants where much of each prompt is fixed instructions or policies that change rarely relative to user queries \cite{anthropic2024mcp,modelcontextprotocol2024}.
-
-Prompt-caching support varies across providers, but the design principle is constant: the orchestration layer should separate stable prompt components from dynamic ones so repeated prefixes are reused across requests and sessions. Combined with semantic caching and cascades, prompt caching captures both vendor-side and application-side reuse, jointly reducing latency and cost without compromising behavior \cite{closer2025maestro,chase2022langchain}.
+Provider-side prompt caching reuses key-value (KV) cache entries for shared prompt prefixes - long system instructions, policy text, or tool definitions - so that repeated prefixes are billed at a reduced rate rather than recomputed in full. Anthropic's Claude and OpenAI both support this mechanism, discounting cached input tokens substantially~\cite{anthropic2024mcp, modelcontextprotocol2024}. Prompt caching is architecturally complementary to semantic caching but operates at the infrastructure layer: it requires exact prefix identity rather than semantic similarity, and it reduces inference cost for repeated prefixes without bypassing the model call itself~\cite{anthropic2024mcp}.
 
 \subsection{Market Context and LLMFlation}
 \label{subsec:market-context}
@@ -908,21 +641,14 @@ Lower unit prices do not automatically yield lower total spend. As LLMs become c
 
 The literature therefore argues that cost optimization must be embedded in system architecture rather than treated as a transient concern to be ``solved'' by future price cuts. Semantic caching, cascades, prompt compression, reranking, and prompt caching remain valuable even as prices fall, because they target structural cost drivers: repeated queries, over-provisioned capacity, unnecessary tokens, and inefficient retrieval \cite{bang2023gptcache,chen2023frugalgpt,gao2023ragsurvey,a16z2024llmflation}. In a multi-cloud environment, these levers also interact with placement and portability decisions that determine how workloads are distributed across providers and pricing regimes \cite{petcu2013interoperability,closer2025maestro}.
 
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=\linewidth]{5-Figures/Chapter2/frugalgpt_tradeoff}
-    \caption{Accuracy and cost tradeoff achieved by FrugalGPT, showing that adaptive LLM cascades can reduce inference cost while maintaining or improving task performance. Adapted from Chen et al. \cite{chen2023frugalgpt}.}
-    \label{fig:frugalgpt-tradeoff}
-\end{figure}
-
 \subsection{Tokenomics in Practice: Representation and Style as Cost Levers}
 \label{subsec:tokenomics-practice}
 
 Beyond model- and retrieval-layer optimisations, token consumption is shaped by choices that precede or follow the model call: the format in which structured data is serialised into the prompt and the verbosity of the requested output. These representation-layer decisions are less studied than caching or routing, but empirical evidence suggests savings comparable to software-layer compression.
 
-One practitioner contribution is TOON (Token-Oriented Object Notation), a compact drop-in replacement for JSON in LLM prompts \cite{toon2025}. It exploits a structural inefficiency in JSON: for tabular payloads, every row repeats the full key set and delimiters, most of which encode schema rather than data. TOON declares column headers once and encodes rows as tab-delimited values, retaining relational structure while removing per-row key verbosity. Practitioner benchmarks report 30–60\% token reductions on flat tabular structures without semantic loss \cite{toon2025}. This is consequential for enterprise RAG systems injecting structured business data - product catalogues, API schemas, entity metadata - as JSON, where key repetition can be a significant fraction of prompt length.
+TOON (Token-Oriented Object Notation) is a compact drop-in replacement for JSON in LLM prompts that declares column headers once and encodes rows as tab-delimited values, eliminating per-row key repetition~\cite{toon2025}. This targets a structural inefficiency inherent to JSON tabular payloads, where schema keys can constitute a significant fraction of prompt length. Practitioner benchmarks report 30–60\% token reductions on flat tabular structures without semantic loss~\cite{toon2025}.
 
-A complementary practitioner finding is Caveman Compression \cite{brussee2025caveman}, predicated on the observation that LLMs can produce factually equivalent responses in a telegraphic register omitting articles, auxiliary verbs, and hedging, without degrading accuracy or actionability. The original Claude Code skill by Brussee (2025) achieved roughly 75\% output token reduction on structured tasks \cite{brussee2025caveman}, while a distillation by Guzik (2026) reduced the meta-instruction from 552 to 85 tokens while preserving 14–21\% savings over a ``Be concise'' baseline \cite{guzik2026cavemanmicro}. Its mechanistic basis matches the LLMLingua framing of Section~\ref{subsec:prompt-compression}: both exploit the gap between the budget consumed by predictable surface forms and that strictly needed for the factual payload. The distinction is directional - LLMLingua removes predictable tokens from the \emph{input}, Caveman Compression from the \emph{output} - but both target the same redundancy. These findings originate in practitioner benchmarks rather than peer-reviewed studies, and are included as empirical evidence of the representation-layer effect and motivation for formal investigation.
+Caveman Compression~\cite{brussee2025caveman} is a practitioner technique predicated on the observation that LLMs can produce factually equivalent responses in a telegraphic register omitting articles, auxiliary verbs, and hedging. The original formulation by Brussee (2025) achieved roughly 75\% output token reduction on structured tasks~\cite{brussee2025caveman}; a subsequent distillation by Guzik (2026) reduced the meta-instruction from 552 to 85 tokens while preserving comparable savings~\cite{guzik2026cavemanmicro}. Its mechanistic basis matches the LLMLingua framing of Section~\ref{subsec:prompt-compression}: both exploit the gap between tokens consumed by predictable surface forms and those strictly needed for the factual payload, with the distinction that LLMLingua operates on the input while Caveman Compression targets the output. These findings originate in practitioner benchmarks rather than peer-reviewed studies, and are included as empirical evidence motivating formal investigation.
 
 The three-layer tokenomics model can now be stated explicitly. At the \emph{model layer}, cascade routing and dynamic model selection - as formalised by FrugalGPT \cite{chen2023frugalgpt} - invoke expensive frontier models only when warranted. At the \emph{retrieval layer}, semantic caching \cite{bang2023gptcache}, prompt caching, and reranking prevent redundant calls and filter irrelevant context. At the \emph{representation layer}, compression such as LLMLingua \cite{jiang2023llmlingua}, format optimisations such as TOON \cite{toon2025}, and output style control such as Caveman Compression \cite{brussee2025caveman} eliminate tokens whose marginal semantic contribution is low relative to their billing weight. This taxonomy frames the engineering contributions of this dissertation, in which the Maestro improvements address cost levers at all three layers within a unified multi-cloud architecture.
 
@@ -964,10 +690,4 @@ This framing is consequential for design. In a conventional deployment the model
 
 Operational governance of GenAI systems also has an economic dimension. Token-priced inference is more dynamic and usage-dependent than the resource-reservation models typical of classical cloud workloads, and without deliberate financial governance, LLM systems are susceptible to overruns from prompt inefficiency, suboptimal routing, or unconstrained retrieval. The FinOps Foundation has extended its cloud financial management framework to these AI dynamics, defining a three-phase cycle: \textit{Inform}, \textit{Optimize}, and \textit{Operate} \cite{finops2024ai}.
 
-The \textit{Inform} phase establishes visibility into AI expenditure by instrumenting token usage, call frequency, and cost per query. The \textit{Optimize} phase uses this visibility to implement improvements - model downsizing for low-complexity queries, semantic caching, prompt compression, and retrieval efficiency. The \textit{Operate} phase embeds these into ongoing practice, establishing cross-functional accountability between engineering, product, and finance and closing the loop iteratively \cite{finops2024ai}. The cycle is continuous by design: cost governance is positioned not as a one-time exercise but as a persistent discipline integrated into deployment and monitoring. This informs the cost-efficiency objective - O2 in this thesis - and provides the structure within which the earlier cost-reduction techniques are situated as components of a managed, accountable process rather than isolated interventions.
-
-\subsection{Synthesis: Towards a Governed GenAI Operations Model}
-
-The four perspectives converge on a unified thesis: deploying a GenAI system is far less demanding than governing it sustainably in production. Sculley et al. \cite{sculley2015debt} established the structural sources of operational risk; Xu et al. \cite{xu2025ragops} extended this to the dual-lifecycle complexity of RAG; Es et al. \cite{es2023ragas} provided the evaluation instrumentation for quality governance; and the FinOps Foundation supplied the financial framework within which quality and cost objectives are managed accountably.
-
-Together these define a layered governance model for production RAG systems, progressing from \textit{structural risk awareness} (Sculley et al.) through \textit{architectural discipline} (RAGOps) to \textit{quality measurement} (RAGAS) and \textit{financial accountability} (FinOps). Maestro is positioned as an instantiation of these principles in an enterprise multi-cloud context. The objectives O2 and O3 - cost efficiency and output quality assurance - correspond directly to the Optimize and Inform–Operate dimensions, grounding this work's empirical contributions in an established, industry-validated governance architecture.
+The \textit{Inform} phase establishes visibility into AI expenditure by instrumenting token usage, call frequency, and cost per query. The \textit{Optimize} phase uses this visibility to implement improvements - model downsizing for low-complexity queries, semantic caching, prompt compression, and retrieval efficiency. The \textit{Operate} phase embeds these into ongoing practice, establishing cross-functional accountability between engineering, product, and finance and closing the loop iteratively \cite{finops2024ai}. The cycle is continuous by design: cost governance is positioned not as a one-time exercise but as a persistent discipline integrated into deployment and monitoring. This informs the cost-efficiency objective - O2 in this thesis - and provides the structure within which the earlier cost-reduction techniques are situated as components of a managed, accountable process rather than isolated interventions. Together, the technical debt perspective, production evaluation methodology, RAGOps lifecycle, and FinOps governance cycle define the operational and financial framework within which the Maestro extensions proposed in this dissertation are situated.
