@@ -1,20 +1,23 @@
 %!TEX root = ../template.tex
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% chapter3.tex
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \typeout{NT FILE chapter3.tex}%
-
+% ============================================================
+%  Chapter 3 — System Description and Methodology
+% ============================================================
 \chapter{System Description and Methodology}
-\label{cha:system-description-and-methodology}
+\label{chap:system-description}
 
+This chapter presents the technical substrate on which the research contributions are built and the methodological approach that governs their design, implementation, and evaluation. Section~\ref{sec:system-description} describes the Closer GenAI Framework — referred to throughout this work as Maestro — in its pre-intervention state, characterising its architectural structure, data flows, and the specific gaps that motivate each research objective. Section~\ref{sec:methodology} formalises the research methodology, detailing how each contribution is designed, implemented, and evaluated against the success criteria stated in Section~\ref{sec:objectives}.
 
-%%------------------------------------------------------------
-%% SECTION: Problem Definition
-%%------------------------------------------------------------
-\section{Problem Definition}
-\label{sec:problem-definition}
+% ============================================================
+\section{System Description}
+\label{sec:system-description}
+% ============================================================
 
+\subsection{Overview and Architectural Pattern}
+\label{subsec:overview}
+
+Maestro is a multi-repository, Azure-native, microservices-based Retrieval-Augmented Generation platform designed to support the deployment of enterprise chatbots, and related ~\cite{closer2025maestro}. Its architectural pattern is a REST/JSON service mesh: independent FastAPI services communicate exclusively via HTTP with API-key authentication, with no message queue or event bus mediating inter-service calls. Static service URLs are resolved through Azure App Configuration, and all secrets are managed via Azure Key Vault, consumed at service startup through \texttt{DefaultAzureCredential}.
 % TODO: Present the problem definition.
 
 
