@@ -37,7 +37,7 @@ The research presented in this dissertation emerges from a partnership between t
 
 Closer Consulting is responsible for the design, development, and maintenance of the Maestro GenAI framework, which represents both the technical foundation and the core object of study of this work, functioning simultaneously as the starting point, the engineering substrate on which contributions are built, and the environment in which they are evaluated. Throughout the research process, I have been granted privileged access to Maestro's production deployments, operational cost telemetry, and multi-tenant enterprise configurations, facilitating a level of analysis and validation grounded in production conditions~\cite{closer2025maestro}.
 
-This collaboration extends beyond resource access, shaping the research agenda and ensuring that outcomes directly address genuine industry needs. All architectural decisions, implementation steps, and evaluation metrics have been established within the constraints and requirements of authentic enterprise environments, rather than controlled laboratory and theoretical experiments exclusively.
+This collaboration shapes the research agenda directly: architectural decisions, implementation choices, and evaluation metrics are grounded in enterprise constraints leaving the research grounded in production conditions.
 
 
 %%------------------------------------------------------------
@@ -74,22 +74,30 @@ The third challenge concerns orchestration composability for multi-agent workflo
 \section{Objectives}
 \label{sec:objectives}
 
-Four research objectives are defined to address the structural limitations
-identified in Section~\ref{sec:Problem-Statement}. Each objective is stated as
-a concrete, measurable outcome with explicit success criteria and a designated
-primary toolset, and is aligned with one of the four thematic axes of the
-dissertation: connectivity and expansion (O1), observability and visibility
-(O2), cost reduction (O3), and infrastructure robustness (O4). Although
-Maestro is designed for multi-cloud deployment, the implementation work
-undertaken in this dissertation is carried out against a single concrete cloud
-environment, namely Microsoft Azure, which is the production environment in
-which the framework is currently operated. Objectives and contributions are
+Four research objectives are proposed to address the structural limitations
+identified in Section~\ref{sec:Problem-Statement}. Each is stated as a
+concrete, measurable outcome with explicit success criteria and a designated
+primary toolset. They are not guaranteed to be fully achieved: all four are
+pursued within the time constraints of the dissertation, and execution follows
+a fixed order of dependency and priority.
+
+O1 is self-contained and is implemented first. O2 is implemented second and
+is a hard prerequisite for everything that follows, as it establishes the cost
+and quality baseline without which O3 and O4 cannot be evaluated. Once O2 is
+complete, O3 is the primary focus — it addresses the cost-reduction goals
+central to this dissertation. O4 is only pursued if time remains after O3 is
+substantially complete, as it represents an independent architectural
+improvement rather than a dependency of O3.
+
+Although Maestro is designed for multi-cloud deployment, the implementation
+work undertaken in this dissertation is carried out against a single concrete
+cloud environment, namely Microsoft Azure, which is the production environment
+in which the framework is currently operated. Objectives and contributions are
 therefore framed in terms of the artefacts produced on Azure and the
 architectural patterns that emerge from them, rather than claims of
 equivalence across cloud providers. Where validation is still in progress at
-the time of writing, hedged language is used deliberately to signal that the
-stated outcome is a research hypothesis subject to empirical confirmation, in
-keeping with the open, investigative posture adopted throughout this work.
+the time of writing, safegarded language is used to indicate that the stated
+outcome remains a hypothesis pending empirical confirmation.
 
 \textbf{O1 - MCP bidirectional integration.} The first objective is to
 introduce, end-to-end, the \gls{mcp} into Maestro as a first-class
