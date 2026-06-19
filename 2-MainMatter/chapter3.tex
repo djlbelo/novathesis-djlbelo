@@ -8,13 +8,12 @@
 \label{chap:system-description}
 
 This chapter describes the technical platform on which the research
-contributions are built and the methodology that governs their design,
+contributions are built and the methodology governing their design,
 implementation, and evaluation.
 Section~\ref{sec:system-description} characterises Maestro - the Closer
-GenAI Framework - in its pre-intervention state, identifying the structural
-gaps that motivate each objective.
-Section~\ref{sec:methodology} formalises the research approach and defines
-the evaluation instruments applied in each objective.
+GenAI Framework - in its pre-intervention state and identifies the structural
+gaps that motivate each objective; Section~\ref{sec:methodology} formalises the
+research approach and the evaluation instruments applied to each objective.
 
 % ============================================================
 \section{System Description}
@@ -24,23 +23,25 @@ the evaluation instruments applied in each objective.
 \subsection{Overview and Architectural Pattern}
 \label{subsec:overview}
 
-Maestro is a multi-repository, Azure-native, microservices-based Retrieval-Augmented Generation platform designed to support the deployment of enterprise chatbots, and related ~\cite{closer2025maestro}. Its architecture follows a REST/JSON service mesh: independent FastAPI services
-communicate via HTTP with API-key authentication, with no message queue or event
-bus mediating inter-service calls.
-Static service URLs are resolved through Azure App Configuration, secrets are
-managed via Azure Key Vault, and all Python services share a base Docker image
-distributed through a shared Azure Container Registry.
-Infrastructure is provisioned declaratively via OpenTofu targeting Microsoft
-Azure, with continuous integration and delivery handled through Azure DevOps
-Pipelines.
+Maestro is a multi-repository, Azure-native, microservices-based
+Retrieval-Augmented Generation platform for deploying enterprise
+chatbots~\cite{closer2025maestro}.
+Independent FastAPI services communicate over HTTP with API-key authentication
+in a REST/JSON service mesh, with no message queue or event bus mediating
+inter-service calls.
+Service URLs are resolved through Azure App Configuration, secrets through
+Azure Key Vault, and all Python services share a base Docker image distributed
+via a shared Azure Container Registry.
+Infrastructure is provisioned declaratively with OpenTofu, and continuous
+integration and delivery are handled through Azure DevOps Pipelines.
 
-The framework is implemented primarily in Python~3.12 using FastAPI, LangChain,
-and Streamlit for its backend and frontend surfaces.
-As discussed in Section~\ref{sec:orchestration-frameworks}, LangChain provides the
-orchestration primitives currently used by Maestro, a design decision that
-directly informs the approach taken in O4.
+The framework is implemented in Python~3.12 using FastAPI, LangChain, and
+Streamlit.
+As discussed in Section~\ref{sec:orchestration-frameworks}, LangChain provides
+Maestro's current orchestration primitives, a design decision that directly
+informs O4.
 The platform decomposes into four core runtime microservices, three user-facing
-surfaces, and two platform-layer repositories, as summarised in
+surfaces, and two platform-layer repositories, summarised in
 Table~\ref{tab:service-tiers}.
 
 \begin{table}[ht]
@@ -62,10 +63,9 @@ Platform &
 \end{tabular}
 \end{table}
 
-The present research focuses exclusively on the four core runtime
-microservices; the user-experience surfaces and the optional guardrails service
-are not modified and are described only to the extent necessary to characterise
-the system as a whole.
+This research focuses exclusively on the four core runtime microservices; the
+user-experience surfaces and the optional guardrails service are not modified
+and are described only as needed to characterise the system.
 
 \subsection{Core Services}
 \label{subsec:core-services}
@@ -75,83 +75,59 @@ The backend is the sole orchestrator of the RAG pipeline and the single contact
 point for all frontend surfaces.
 It implements the full golden-path sequence - conversation-history retrieval,
 hybrid vector search, per-chunk relevance filtering, prompt assembly, and LLM
-invocation - through a set of purpose-built orchestrators under
-\texttt{app/orchestrators/orchestrator\_agents/}.
-These orchestrators are hand-crafted, non-composable modules: each is a
-standalone script with its own control flow and no shared primitive for
-branching, parallelism, or execution tracing.
-As established in Section~\ref{subsec:rag_survey} and
-Section~\ref{sec:orchestration-frameworks}, this architecture is characteristic of
-Naive-to-Advanced RAG pipelines that predate composable agent graph runtimes;
-O4 addresses this limitation by refactoring the orchestrators as reusable
-LangGraph graphs~\cite{chase2022langchain}.
-Additionally, the service currently performs no cost or token-consumption
-instrumentation at any stage of the pipeline, constituting the structural gap
-addressed by O2.
+invocation - through hand-crafted, non-composable orchestrators under
+\texttt{app/orchestrators/orchestrator\_agents/}, each a standalone script with
+no shared primitive for branching, parallelism, or execution tracing.
+As established in Sections~\ref{subsec:rag_survey}
+and~\ref{sec:orchestration-frameworks}, this is characteristic of
+Naive-to-Advanced RAG pipelines that predate composable agent-graph runtimes;
+O4 addresses it by refactoring the orchestrators as reusable LangGraph
+graphs~\cite{chase2022langchain}.
+The service also performs no cost or token-consumption instrumentation, the
+structural gap addressed by O2.
 
 \paragraph{LLM Microservice (\texttt{llm-microservice}).}
-This service acts as a provider-agnostic LLM façade, routing generation
-requests to Azure OpenAI (GPT-4o, GPT-4o-mini), OpenAI, Azure AI Services
-(Mistral-Nemo, DeepSeek-R1), and Google Gemini~2.0~Flash behind a stable
+This service is a provider-agnostic LLM façade, routing generation requests to
+Azure OpenAI, OpenAI, Azure AI Services, and Google Gemini behind a stable
 internal API contract.
 A routing registry (\texttt{REQUEST\_PER\_SERVICE}) decouples model selection
-from orchestration logic, enabling model substitution without changes to the
-backend.
-The multi-provider design of this service creates the operational conditions
-described in Section~\ref{sec:cost-optimization}: because queries are
-dispatched to models of varying capability and cost, dynamic cascade routing
-and cost-aware model selection - the techniques evaluated in O3 - are
-architecturally feasible without redesigning the service~\cite{chen2023frugalgpt}.
-The work in O2 will extend this service with Langfuse instrumentation to emit
-per-invocation token counts and monetary cost for every provider path.
+from orchestration logic, enabling model substitution without backend changes.
+Because queries are dispatched to models of varying capability and cost, the
+dynamic cascade routing and cost-aware model selection evaluated in O3 are
+architecturally feasible without redesigning the
+service~\cite{chen2023frugalgpt}.
+O2 extends this service with Langfuse instrumentation to emit per-invocation
+token counts and monetary cost for every provider path.
 
 \paragraph{Vector Database Service (\texttt{chatbot-vector-db}).}
-This service owns the document ingestion pipeline and semantic retrieval.
-Upon receiving an indexing request, it loads documents from Azure Blob Storage
-using format-specific parsers, splits them with LangChain's
+This service owns document ingestion and semantic retrieval.
+It loads documents from Azure Blob Storage, splits them with LangChain's
 \texttt{RecursiveCharacterTextSplitter}, generates dense embeddings via
-\texttt{text-embedding-ada-002}, and stores the resulting vectors in a MongoDB
-Atlas Vector Search index.
-At query time, the service supports both pure $k$-nearest-neighbour vector
-search and a hybrid retrieval mode combining vector similarity with a
-BM25-like keyword index, reflecting the Advanced RAG retrieval mechanisms
-surveyed in Section~\ref{subsec:rag_survey}~\cite{gao2023ragsurvey}.
+\texttt{text-embedding-ada-002}, and stores the vectors in a MongoDB Atlas
+Vector Search index.
+At query time it supports both pure $k$-nearest-neighbour vector search and a
+hybrid mode combining vector similarity with a BM25-like keyword index,
+reflecting the Advanced RAG mechanisms surveyed in
+Section~\ref{subsec:rag_survey}~\cite{gao2023ragsurvey}.
 The semantic caching layer evaluated in O3 will be integrated at this retrieval
-stage, intercepting repeated semantically equivalent queries before they reach
-the embedding and LLM invocation steps, consistent with the GPTCache
-architecture discussed in Section~\ref{subsec:semantic-caching}~\cite{bang2023gptcache}.
+stage, intercepting repeated semantically equivalent queries before the
+embedding and LLM invocation steps, consistent with the GPTCache architecture
+of Section~\ref{subsec:semantic-caching}~\cite{bang2023gptcache}.
 
 \paragraph{Datastore Microservice (\texttt{datastore-microservice}).}
 This service provides a pluggable transactional data layer for chat history,
-session metadata, document records, and suggested questions.
-A single \texttt{DATABASE} environment variable toggles the active backend
-between Azure Cosmos DB and MongoDB Atlas, with both implementations sharing
-the same API surface of 18 REST endpoints.
-This service is not directly targeted by any of the four research objectives
-but is an operational dependency of the backend orchestrator throughout all
-evaluation experiments.
-
-\subsection{Supporting Surfaces and Infrastructure}
-\label{subsec:supporting}
-
-Three user-facing surfaces complete the platform: a Streamlit chatbot frontend
-with Microsoft Entra ID authentication, a Streamlit admin dashboard for KPIs and
-document management, and an Angular~18 back-office for curated question and
-prompt management~\cite{closer2025maestro}.
-These components are not modified during this research; they are referenced only
-where their behaviour provides context for the experimental setup (e.g.,\ the
-frontend's model-picker determines which LLM provider path is exercised during
-evaluation).
-An optional PII guardrails microservice built on Microsoft Presidio Analyser
-also exists in the codebase but is not integrated into the backend request path
-and is out of scope for this work.
+session metadata, document records, and suggested questions, toggling between
+Azure Cosmos DB and MongoDB Atlas via a single \texttt{DATABASE} environment
+variable behind a shared API surface.
+It is not targeted by any of the four objectives but is an operational
+dependency of the backend orchestrator throughout the evaluation experiments.
 
 \subsection{Golden-Path Data Flow}
 \label{subsec:golden-path}
 
 The canonical interaction sequence, summarised in
 Table~\ref{tab:golden-path}, defines the measurement surface for O2 and the
-optimisation targets for O3:
+optimisation targets for O3.
 
 \begin{table}[ht]
 \centering
@@ -162,44 +138,40 @@ optimisation targets for O3:
 \textbf{Step} & \textbf{Action} \\
 \midrule
 1 & The authenticated user submits a query via the Streamlit frontend. \\
-2 & The frontend issues a \texttt{POST /v1/backend/ai-agent-response}
-    to the chatbot backend, carrying session identifier, query text,
-    and selected model provider. \\
-3 & The backend retrieves recent conversation history from the
-    datastore microservice to construct contextual continuity. \\
-4 & The backend queries the vector database service for the top-$k$
-    semantically similar document chunks via hybrid retrieval. \\
-5 & For each retrieved chunk, the backend issues a relevance-checking
-    call to the LLM microservice; only relevant chunks proceed. \\
-6 & The backend assembles the final prompt and issues a generation
-    call to the LLM microservice via the selected provider path. \\
-7 & The generated answer and source citations are persisted to the
-    datastore and streamed back to the frontend. \\
+2 & The frontend issues \texttt{POST /v1/backend/ai-agent-response} to the
+    backend with session, query, and selected provider. \\
+3 & The backend retrieves recent conversation history from the datastore. \\
+4 & The backend queries the vector database for the top-$k$ similar chunks via
+    hybrid retrieval. \\
+5 & The backend relevance-checks each chunk via the LLM microservice; only
+    relevant chunks proceed. \\
+6 & The backend assembles the prompt and issues a generation call via the
+    selected provider. \\
+7 & The answer and source citations are persisted and streamed back to the
+    frontend. \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 No token counts, latency measurements, or cost signals are recorded at any
-stage of this sequence in the current implementation - the structural gap
-directly motivating O2.
+stage of the current implementation - the structural gap directly motivating
+O2.
 
 \subsection{Connectivity and Protocol Gaps}
 \label{subsec:connectivity}
 
 Every external data source or capability in Maestro is currently integrated
-through a bespoke REST connector with no shared discovery or invocation
+through a bespoke REST connector, with no shared discovery or invocation
 contract.
-There is no MCP client layer enabling the framework to consume external
-MCP-compliant servers without provider-specific adapter code, and no MCP
-server exposing Maestro's core capabilities to external agents.
-As discussed in Section~\ref{sec:mcp}, the Model Context Protocol defines
-a universal JSON-RPC interface through which LLM hosts discover and invoke
-external tools and resources, reducing the integration surface from a
-point-to-point $N \times M$ mesh towards a hub-and-spoke $N + M$
-topology~\cite{anthropic2024mcp}.
-O1 addresses this gap by introducing both a Maestro MCP client module and a
-standalone \texttt{maestro-mcp-server}, realising bidirectional protocol
-participation.
+The framework has no client layer through which it could consume external
+MCP-compliant servers without provider-specific adapter code.
+As discussed in Section~\ref{sec:mcp}, the Model Context Protocol defines a
+universal JSON-RPC interface through which LLM hosts discover and invoke
+external tools and resources, replacing repeated point-to-point integration
+with a standardised, plug-and-play connectivity model~\cite{anthropic2024mcp}.
+O1 addresses this gap by introducing an MCP integration layer that lets Maestro
+act as a gateway to external MCP servers and additionally exposes Maestro's own
+core capabilities as protocol-compliant MCP tools.
 
 % ============================================================
 \section{Methodology}
@@ -214,15 +186,14 @@ methodology~\cite{hevner2004design}, the standard paradigm for research whose
 primary output is an engineered artefact evaluated in a real organisational
 context.
 DSR prescribes an iterative cycle of problem identification, artefact design,
-construction, and rigorous evaluation, conducted in close collaboration with
-the environment that defines the problem.
+construction, and rigorous evaluation conducted in close collaboration with the
+environment that defines the problem.
 This is appropriate here because the contributions - an MCP integration layer,
 an observability pipeline, cost-reduction mechanisms, and a composable
-orchestration runtime - can only be assessed meaningfully under the operational
-conditions of a production system.
+orchestration runtime - can only be assessed meaningfully under production
+conditions.
 The production Maestro deployment on Microsoft Azure serves simultaneously as
-the engineering substrate, the experimental environment, and the source of
-evaluation data.
+engineering substrate, experimental environment, and source of evaluation data.
 
 \subsection{Dependency Ordering and Research Phases}
 \label{subsec:phases}
@@ -232,13 +203,12 @@ structure.
 O1 (MCP integration) is architecturally independent and can proceed in parallel
 with the instrumentation work of O2.
 O2 (cost telemetry pipeline) is a \textit{hard prerequisite} for O3: without a
-quantitative production baseline of token cost, latency, and output quality,
+quantitative production baseline of token cost, latency, and output quality
 there is neither a principled basis for selecting cost-reduction techniques nor
-a rigorous reference against which their effect can be measured.
-O4 (composable agent graphs) depends on the Langfuse instrumentation established
-in O2 for its trace-coverage evaluation criterion; the shared observability stack
-is a deliberate architectural decision that eliminates the cost and complexity of
-maintaining parallel instrumentation pipelines, as described in
+a reference against which their effect can be measured.
+O4 (composable agent graphs) reuses the Langfuse instrumentation established in
+O2 for its trace-coverage evaluation, a deliberate architectural decision that
+avoids maintaining parallel instrumentation pipelines, as described in
 Section~\ref{sec:genai-ops-governance}~\cite{langfuse2024}.
 
 Each objective follows three phases: \textit{design}, in which the target
@@ -252,15 +222,14 @@ described below.
 \label{subsec:implementation}
 
 \paragraph{O1 - MCP Bidirectional Integration.}
-Two artefacts are produced.
-First, an MCP client module integrated into Maestro that enables the framework
-to consume external MCP-compliant servers - including MongoDB Atlas MCP,
-Microsoft Learn MCP, and Microsoft Fabric MCP - without bespoke adapter code,
-relying solely on the Anthropic MCP SDK and FastMCP for protocol-level
-discovery and invocation~\cite{anthropic2024mcp}.
-Second, a standalone \texttt{maestro-mcp-server} that exposes Maestro's core
-capabilities - RAG query, document ingestion, and session summarisation -
-as protocol-compliant tools consumable by any external MCP-compatible agent.
+Two artefacts are produced: an MCP client that lets Maestro consume external
+MCP-compliant servers - such as MongoDB Atlas, Microsoft Learn, and Microsoft
+Fabric MCP - without bespoke adapter code, relying solely on the Anthropic MCP
+SDK and FastMCP for protocol-level discovery and
+invocation~\cite{anthropic2024mcp}; and a server interface that exposes
+Maestro's core capabilities - RAG query, document ingestion, and session
+summarisation - as protocol-compliant tools consumable by any external
+MCP-compatible agent.
 
 \paragraph{O2 - Unified Cost Telemetry Pipeline.}
 Every LLM invocation path identified in a static audit of the Maestro codebase
@@ -272,31 +241,31 @@ relevance~\cite{es2023ragas}.
 Infrastructure-level signals are aggregated through the existing OpenTelemetry
 pipeline into Azure Monitor, providing a unified view across LLM and compute
 dimensions.
-The reliability of the resulting cost baseline is validated by comparing
-Langfuse-reported aggregates against the corresponding Azure billing invoice;
-a deviation below five percent is required before any O3 intervention begins,
-establishing the measurement instrument's credibility as an evaluation
-reference.
+The resulting cost baseline is validated against the corresponding Azure
+billing invoice before any O3 intervention begins, establishing its credibility
+as an evaluation reference.
 
 \paragraph{O3 - Cost Reduction via Tokenomics Optimisation.}
-The techniques implemented under O3 are selected on the basis of the production
-usage patterns surfaced by the O2 baseline, following the three-layer tokenomics
+The techniques implemented under O3 are selected from the production usage
+patterns surfaced by the O2 baseline, following the three-layer tokenomics
 framework presented in Section~\ref{subsec:tokenomics-practice}.
 A workload exhibiting high query repetition motivates semantic caching,
-implemented via MongoDB Atlas Semantic Cache or Azure Managed Redis~\cite{bang2023gptcache};
-a workload dominated by simple queries motivates cascade routing to smaller
-models, implemented via LangChain model routing~\cite{chen2023frugalgpt};
-prompt compression via LLMLingua~\cite{jiang2023llmlingua} is evaluated as a
-complementary technique targeting the representation layer.
+implemented via MongoDB Atlas Semantic Cache or Azure Managed
+Redis~\cite{bang2023gptcache}; a workload dominated by simple queries motivates
+cascade routing to smaller models via LangChain model
+routing~\cite{chen2023frugalgpt}; prompt compression via
+LLMLingua~\cite{jiang2023llmlingua} is evaluated as a complementary technique
+targeting the representation layer.
 At least two techniques are implemented and empirically compared.
 
 \paragraph{O4 - Composable Agent Graph Orchestration.}
 Maestro's purpose-built orchestrators are refactored as reusable LangGraph
-graphs, sharing the Langfuse observability stack established in O2~\cite{chase2022langchain}.
-At least two production workflows are refactored with structurally distinct
-topologies: one sequential workflow and one with conditional branching or
-parallelism, demonstrating that the LangGraph pattern is expressive enough
-for diverse real-world cases.
+graphs, sharing the Langfuse observability stack established in
+O2~\cite{chase2022langchain}.
+At least two production workflows with structurally distinct topologies are
+refactored - one sequential and one with conditional branching or parallelism -
+demonstrating that the LangGraph pattern is expressive enough for diverse
+real-world cases.
 The refactored graphs are accompanied by unit tests, replacing the untested
 hand-crafted implementations.
 
@@ -304,25 +273,25 @@ hand-crafted implementations.
 \label{subsec:evaluation}
 
 \paragraph{O1.}
-The MCP integration is validated through automated integration tests that verify
-successful invocation of each exposed MCP tool by an independent external client,
-with no provider-specific adapter code in the invocation path.
-Proof-of-concept deployments are produced for each integrated external MCP server.
+The MCP integration is validated through automated integration tests that
+verify successful invocation of each exposed MCP tool by an independent external
+client, with no provider-specific adapter code in the invocation path, and is
+supported by a proof-of-concept deployment for each integrated external MCP
+server.
 
 \paragraph{O2.}
-The telemetry pipeline is evaluated against four criteria: (i)~100\% of
-identified LLM invocation paths are instrumented; (ii)~each invocation exports
-cost, trace, and sampled RAGAS scores; (iii)~Langfuse-reported costs deviate
-by less than 5\% from the Azure billing invoice; and (iv)~the baseline is
-stable prior to any O3 intervention.
+The telemetry pipeline is evaluated on whether the identified LLM invocation
+paths are instrumented, each invocation exports cost, trace, and sampled RAGAS
+scores, and the Langfuse-reported costs reconcile with the Azure billing invoice
+before any O3 intervention begins.
 
 \paragraph{O3.}
 Cost-reduction effectiveness is measured as the percentage reduction in
 cost-per-query relative to the O2 baseline over a set of production queries
 partitioned into a control group and an experimental group.
 Quality preservation is evaluated via the Two One-Sided Tests (TOST)
-procedure~\cite{lakens_2017_tost} at $\alpha = 0.05$ with an equivalence
-margin of $\pm 0.05$ on RAGAS faithfulness and answer relevancy scores.
+procedure~\cite{lakens_2017_tost} on RAGAS faithfulness and answer-relevancy
+scores.
 TOST is adopted in preference to a standard two-sample $t$-test because the
 research question is one of \textit{equivalence} - demonstrating that the
 experimental and control quality distributions are sufficiently close to be
@@ -331,12 +300,11 @@ difference and cannot, on its own, support a positive claim of quality
 preservation~\cite{lakens_scheel_isager_2018}.
 
 \paragraph{O4.}
-The orchestration artefacts are evaluated on four criteria: (i)~at least two
-workflows with structurally distinct topologies are refactored; (ii)~trace
-coverage of at least 80\% of execution steps is achieved via Langfuse;
-(iii)~lines of code are reduced by at least 30\% relative to the original
-hand-crafted implementations; and (iv)~refactored agents carry unit tests
-where the originals had none.
+The orchestration artefacts are evaluated on refactoring at least two workflows
+with structurally distinct topologies, achieving substantial Langfuse trace
+coverage of execution steps, reducing lines of code relative to the original
+hand-crafted implementations, and adding unit tests where the originals had
+none.
 
 \subsection{Experimental Controls and Validity Threats}
 \label{subsec:validity}
@@ -346,17 +314,17 @@ of the production query distribution: if user behaviour shifts between the
 baseline and intervention period, observed cost differences may reflect workload
 change rather than technique efficacy.
 This is mitigated by partitioning queries into control and experimental groups
-within the same observation window, stratified to preserve query-type distribution.
+within the same observation window, stratified to preserve query-type
+distribution.
 
-The primary threat to \textit{construct validity} is the use of Langfuse-reported
-token counts as a proxy for actual cost.
-This is addressed by the O2 validation criterion requiring less than 5\% deviation
-from Azure billing data, establishing the measurement instrument's reliability
-before it serves as an evaluation reference.
+The primary threat to \textit{construct validity} is the use of
+Langfuse-reported token counts as a proxy for actual cost; this is addressed by
+the O2 validation requiring reconciliation with Azure billing data before the
+instrument serves as an evaluation reference.
 
 \textit{External validity} is bounded by the single-environment nature of the
 evaluation: all implementation and measurement work is conducted on the Azure
 deployment of Maestro.
-Architectural patterns and cost-reduction findings are expected to generalise
-to equivalent multi-cloud RAG deployments, but cross-environment equivalence
-is not empirically validated within the scope of the present work.
+Architectural patterns and cost-reduction findings are expected to generalise to
+equivalent multi-cloud RAG deployments, but cross-environment equivalence is not
+empirically validated within the scope of the present work.
