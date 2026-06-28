@@ -12,7 +12,7 @@ contributions are built and the methodology governing their design,
 implementation, and evaluation.
 Section~\ref{sec:system-description} characterises Maestro - the Closer
 GenAI Framework - in its pre-intervention state and identifies the structural
-gaps that motivate each objective; Section~\ref{sec:methodology} formalises the
+gaps that motivate each objective. Section~\ref{sec:methodology} formalises the
 research approach and the evaluation instruments applied to each objective.
 
 % ============================================================
@@ -23,9 +23,11 @@ research approach and the evaluation instruments applied to each objective.
 \subsection{Overview and Architectural Pattern}
 \label{subsec:overview}
 
-Maestro is a multi-repository, Azure-native, microservices-based
-Retrieval-Augmented Generation platform for deploying enterprise
-chatbots~\cite{closer2025maestro}.
+Maestro is a multi-repository, microservices-based
+\gls{rag} platform for deploying enterprise \gls{genai} applications~\cite{closer2025maestro}.
+Although the \gls{llm} gateway is designed to abstract multiple model providers,
+all production deployments evaluated in this work operate on Microsoft Azure.
+
 Independent FastAPI services communicate over HTTP with API-key authentication
 in a REST/JSON service mesh, with no message queue or event bus mediating
 inter-service calls.
@@ -74,10 +76,10 @@ and are described only as needed to characterise the system.
 The backend is the sole orchestrator of the RAG pipeline and the single contact
 point for all frontend surfaces.
 It implements the full golden-path sequence - conversation-history retrieval,
-hybrid vector search, per-chunk relevance filtering, prompt assembly, and LLM
-invocation - through hand-crafted, non-composable orchestrators under
-\texttt{app/orchestrators/orchestrator\_agents/}, each a standalone script with
-no shared primitive for branching, parallelism, or execution tracing.
+hybrid vector search, per-chunk relevance filtering, prompt assembly, and \gls{llm}
+invocation - through hand-crafted, non-composable orchestrators, each a
+standalone script with no shared primitive for branching, parallelism, or
+execution tracing.
 As established in Sections~\ref{subsec:rag_survey}
 and~\ref{sec:orchestration-frameworks}, this is characteristic of
 Naive-to-Advanced RAG pipelines that predate composable agent-graph runtimes;
@@ -87,9 +89,9 @@ The service also performs no cost or token-consumption instrumentation, the
 structural gap addressed by O2.
 
 \paragraph{LLM Microservice (\texttt{llm-microservice}).}
-This service is a provider-agnostic LLM façade, routing generation requests to
+This service is a provider-agnostic \gls{llm} façade, routing generation requests to
 Azure OpenAI, OpenAI, Azure AI Services, and Google Gemini behind a stable
-internal API contract.
+internal \gls{api} contract.
 A routing registry (\texttt{REQUEST\_PER\_SERVICE}) decouples model selection
 from orchestration logic, enabling model substitution without backend changes.
 Because queries are dispatched to models of varying capability and cost, the
@@ -143,8 +145,8 @@ optimisation targets for O3.
 3 & The backend retrieves recent conversation history from the datastore. \\
 4 & The backend queries the vector database for the top-$k$ similar chunks via
     hybrid retrieval. \\
-5 & The backend relevance-checks each chunk via the LLM microservice; only
-    relevant chunks proceed. \\
+5 & The backend evaluates the relevance of each retrieved chunk via the \gls{llm}
+    microservice; only passages judged relevant proceed. \\
 6 & The backend assembles the prompt and issues a generation call via the
     selected provider. \\
 7 & The answer and source citations are persisted and streamed back to the
@@ -165,8 +167,8 @@ through a bespoke REST connector, with no shared discovery or invocation
 contract.
 The framework has no client layer through which it could consume external
 MCP-compliant servers without provider-specific adapter code.
-As discussed in Section~\ref{sec:mcp}, the Model Context Protocol defines a
-universal JSON-RPC interface through which LLM hosts discover and invoke
+As discussed in Section~\ref{sec:mcp}, the \gls{mcp} defines a
+universal JSON-RPC interface through which \gls{llm} hosts discover and invoke
 external tools and resources, replacing repeated point-to-point integration
 with a standardised, plug-and-play connectivity model~\cite{anthropic2024mcp}.
 O1 addresses this gap by introducing an MCP integration layer that lets Maestro
@@ -183,9 +185,9 @@ core capabilities as protocol-compliant MCP tools.
 
 This work adopts a \textit{Design Science Research} (DSR)
 methodology~\cite{hevner2004design}, the standard paradigm for research whose
-primary output is an engineered artefact evaluated in a real organisational
+primary output is an engineered artifact evaluated in a real organisational
 context.
-DSR prescribes an iterative cycle of problem identification, artefact design,
+DSR prescribes an iterative cycle of problem identification, artifact design,
 construction, and rigorous evaluation conducted in close collaboration with the
 environment that defines the problem.
 This is appropriate here because the contributions - an MCP integration layer,
@@ -213,8 +215,8 @@ Section~\ref{sec:genai-ops-governance}~\cite{langfuse2024}.
 
 Each objective follows three phases: \textit{design}, in which the target
 architecture and tooling are specified; \textit{implementation}, in which the
-artefact is built and integrated into the Maestro production stack; and
-\textit{evaluation}, in which the artefact is assessed against the success
+artifact is built and integrated into the Maestro production stack; and
+\textit{evaluation}, in which the artifact is assessed against the success
 criteria of Section~\ref{sec:objectives} using the measurement instruments
 described below.
 
@@ -222,7 +224,7 @@ described below.
 \label{subsec:implementation}
 
 \paragraph{O1 - MCP Bidirectional Integration.}
-Two artefacts are produced: an MCP client that lets Maestro consume external
+Two artifacts are produced: an MCP client that lets Maestro consume external
 MCP-compliant servers - such as MongoDB Atlas, Microsoft Learn, and Microsoft
 Fabric MCP - without bespoke adapter code, relying solely on the Anthropic MCP
 SDK and FastMCP for protocol-level discovery and
@@ -251,11 +253,11 @@ patterns surfaced by the O2 baseline, following the three-layer tokenomics
 framework presented in Section~\ref{subsec:tokenomics-practice}.
 A workload exhibiting high query repetition motivates semantic caching,
 implemented via MongoDB Atlas Semantic Cache or Azure Managed
-Redis~\cite{bang2023gptcache}; a workload dominated by simple queries motivates
-cascade routing to smaller models via LangChain model
-routing~\cite{chen2023frugalgpt}; prompt compression via
-LLMLingua~\cite{jiang2023llmlingua} is evaluated as a complementary technique
-targeting the representation layer.
+Redis~\cite{bang2023gptcache}.
+A workload dominated by simple queries motivates cascade routing to smaller
+models via LangChain model routing~\cite{chen2023frugalgpt}.
+Prompt compression via LLMLingua~\cite{jiang2023llmlingua} is evaluated as a
+complementary technique targeting the representation layer.
 At least two techniques are implemented and empirically compared.
 
 \paragraph{O4 - Composable Agent Graph Orchestration.}
@@ -300,7 +302,7 @@ difference and cannot, on its own, support a positive claim of quality
 preservation~\cite{lakens_scheel_isager_2018}.
 
 \paragraph{O4.}
-The orchestration artefacts are evaluated on refactoring at least two workflows
+The orchestration artifacts are evaluated on refactoring at least two workflows
 with structurally distinct topologies, achieving substantial Langfuse trace
 coverage of execution steps, reducing lines of code relative to the original
 hand-crafted implementations, and adding unit tests where the originals had
@@ -325,6 +327,6 @@ instrument serves as an evaluation reference.
 \textit{External validity} is bounded by the single-environment nature of the
 evaluation: all implementation and measurement work is conducted on the Azure
 deployment of Maestro.
-Architectural patterns and cost-reduction findings are expected to generalise to
-equivalent multi-cloud RAG deployments, but cross-environment equivalence is not
-empirically validated within the scope of the present work.
+Architectural patterns and cost-reduction findings are expected to transfer to
+equivalent \gls{rag} deployments on other cloud platforms, but cross-environment
+equivalence is not empirically validated within the scope of the present work.
