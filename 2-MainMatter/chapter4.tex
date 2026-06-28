@@ -29,7 +29,7 @@ Section~\ref{subsec:phases}: O1 must precede O2, O2 is a strict prerequisite
 for O3, and O4 is conditional on the substantial completion of O3.
 
 \paragraph{Phase 1 - Technical Development.}
-This phase encompasses the implementation of O1 (\gls{mcp} Bidirectional
+This phase encompasses the implementation of O1 (\gls{mcp} Client
 Integration) and O2 (Unified Cost Telemetry Pipeline).
 O1 is architecturally self-contained and proceeds first; its completion
 establishes a standardised connectivity layer for the Maestro framework
@@ -53,7 +53,7 @@ following the three-layer tokenomics framework introduced in
 Section~\ref{subsec:tokenomics-practice}.
 Statistical equivalence of output quality is assessed via Two One-Sided Tests
 (TOST)~\cite{lakens_2017_tost} on \gls{ragas} faithfulness and answer
-relevance at $\alpha = 0.05$.
+relevance.
 O4 is pursued only if O3 is substantially complete before the end of November
 2026; it represents an independent architectural improvement rather than a
 dependency of O3.
@@ -144,26 +144,28 @@ Table~\ref{tab:deliverables} consolidates this information.
 \endfoot
 \bottomrule
 \endlastfoot
-O1 - \gls{mcp} integration &
-  \gls{mcp} client and server layer for Maestro &
-  Consumes $\geq 2$ external \gls{mcp} servers without provider-specific
-  adapters; server exposes $\geq 3$ capabilities as \gls{mcp} tools \\
+O1 - \gls{mcp} client integration &
+  \gls{mcp} client layer for Maestro &
+  Maestro consumes external \gls{mcp} servers without provider-specific adapter
+  code\\
 \addlinespace
-O2 - Cost telemetry pipeline &
-  Langfuse + Azure Monitor instrumentation &
-  100\% of \gls{llm} paths instrumented; billing deviation $< 5\%$ versus the
-  Azure invoice; baseline ready before O3 \\
+O2 - Unified cost telemetry pipeline &
+  Langfuse and Azure Monitor instrumentation &
+  The \gls{llm} invocation paths are instrumented with per-invocation cost and
+  execution trace, the reported costs reconcile with the Azure billing invoice,
+  and the baseline is available before O3 begins \\
 \addlinespace
-O3 - Tokenomics cost reduction &
-  Benchmark of $\geq 2$ tokenomics techniques on the production workload &
-  Significant cost-per-query reduction versus O2; quality equivalence on
-  \gls{ragas} faithfulness and answer relevance (TOST, $\alpha = 0.05$,
-  margin $0.05$) \\
+O3 - Cost reduction via tokenomics optimisation &
+  Benchmark of complementary tokenomics techniques on the production workload &
+  Cost-per-query is reduced relative to the O2 baseline while quality
+  equivalence on \gls{ragas} faithfulness and answer relevance is demonstrated
+  via Two One-Sided Tests (TOST) \\
 \addlinespace
-O4 - Composable orchestration \textit{(if time permits)} &
-  $\geq 2$ LangGraph refactors with unit tests &
-  $\geq 80\%$ Langfuse trace coverage; $\geq 30\%$ fewer lines of code;
-  $\geq 1$ sequential and $\geq 1$ branching topology \\
+O4 - Composable agent graph orchestration \textit{(if time permits)} &
+  LangGraph refactors of production workflows with unit tests &
+  Production workflows with structurally distinct topologies are refactored as
+  LangGraph graphs, with substantial Langfuse trace coverage and reduced lines
+  of code relative to the hand-crafted implementations \\
 \end{longtable}
 \endgroup
 

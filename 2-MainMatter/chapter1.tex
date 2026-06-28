@@ -24,7 +24,7 @@ Second, cost observability is severely constrained. In the current deployment co
 
 Third, multi-agent orchestration within Maestro lacks the composability required to support complex, interdependent workflows. As \gls{genai} applications grow in scope, they increasingly require the coordination of specialised agents operating in parallel or in structured sequences. Current orchestration approaches do not provide sufficient primitives for expressing these dependencies reliably, which constrains the range of applications that can be built on top of the framework \cite{wang2023survey}.
 
-This dissertation addresses these three problems by proposing a unified and operationally grounded approach. Concretely, the work extends Maestro along three architectural axes: (i) the design and implementation of an \gls{mcp}-compliant server layer that replaces the current set of bespoke connectors with a standardised, plug-and-play integration model; (ii) the instrumentation of the platform with a unified \gls{llm} and infrastructure cost telemetry pipeline, enabling per-invocation token and cost accounting; and (iii) the refactoring of multi-agent workflows around a composable agent-graph orchestration runtime. Together, these extensions are accompanied by a methodology for evaluating production-oriented \gls{genai} infrastructure under operationally realistic conditions.
+This dissertation addresses these three problems by proposing a unified and operationally grounded approach. Concretely, the work extends Maestro along three architectural axes: (i) the design and implementation of an \gls{mcp} client layer that replaces the current set of bespoke connectors with a standardised, plug-and-play integration model; (ii) the instrumentation of the platform with a unified \gls{llm} and infrastructure cost telemetry pipeline, enabling per-invocation token and cost accounting; and (iii) the refactoring of multi-agent workflows around a composable agent-graph orchestration runtime. Together, these extensions are accompanied by a methodology for evaluating production-oriented \gls{genai} infrastructure under operationally realistic conditions.
 
 
 %%------------------------------------------------------------
@@ -49,7 +49,7 @@ This collaboration shapes the research agenda directly: architectural decisions,
 Despite the growing maturity of enterprise \gls{genai} development, frameworks designed for production use continue to face a set of structural limitations that constrain their scalability, operational efficiency, and portability across deployment environments. This section identifies the three core challenges that motivate the present work, all of which are grounded in the operational reality of Maestro, a framework for enterprise \gls{genai} applications in multi-cloud environments developed at Closer Consulting \cite{closer2025maestro}. Each challenge is mapped explicitly to one or more of the four research objectives stated in Section~\ref{sec:objectives}: Challenge~1 motivates O1, Challenge~2 motivates jointly O2 and O3, and Challenge~3 motivates O4.
 
 \paragraph{Challenge 1 - Fragmentation of connectivity (motivates O1).}
-The first challenge concerns the standardisation of tool and service integration. Modern enterprise \gls{genai} systems are required not only to consume data from a wide variety of sources - databases, cloud services, analytics platforms, and enterprise APIs - but also to integrate with the capabilities exposed by external technical tools and \glspl{api} across heterogeneous infrastructure. In Maestro's current architecture, every connection of this kind is implemented as a bespoke connector, with no shared interface contract governing how tools and resources are discovered or invoked by the underlying \gls{llm} \cite{closer2025maestro}. In the absence of such a shared protocol, integration effort is repeated for every new service, the resulting code becomes tightly coupled to the specific provider being consumed, and the system as a whole is difficult to port across deployments without substantial rework - undermining Maestro's multi-cloud design goals. The \gls{mcp}, introduced by Anthropic in 2024, proposes a universal, open protocol that standardises how \gls{llm} hosts discover and invoke external tools and resources \cite{anthropic2024mcp, modelcontextprotocol2024}. However, the integration of \gls{mcp} into production-grade \gls{genai} frameworks - including the definition of reusable client and server implementations across cloud platforms - remains an open engineering challenge with limited empirical treatment in the literature~\cite{thoughtworks_radar_2025,ieee_mcp_healthcare_2025}.
+The first challenge concerns the standardisation of tool and service integration. Modern enterprise \gls{genai} systems are required not only to consume data from a wide variety of sources - databases, cloud services, analytics platforms, and enterprise APIs - but also to integrate with the capabilities exposed by external technical tools and \glspl{api} across heterogeneous infrastructure. In Maestro's current architecture, every connection of this kind is implemented as a bespoke connector, with no shared interface contract governing how tools and resources are discovered or invoked by the underlying \gls{llm} \cite{closer2025maestro}. In the absence of such a shared protocol, integration effort is repeated for every new service, the resulting code becomes tightly coupled to the specific provider being consumed, and the system as a whole is difficult to port across deployments without substantial rework - undermining Maestro's multi-cloud design goals. The \gls{mcp}, introduced by Anthropic in 2024, proposes a universal, open protocol that standardises how \gls{llm} hosts discover and invoke external tools and resources \cite{anthropic2024mcp, modelcontextprotocol2024}. However, the integration of \gls{mcp} into production-grade \gls{genai} frameworks - including the definition of reusable client implementations across cloud platforms - remains an open engineering challenge with limited empirical treatment in the literature~\cite{thoughtworks_radar_2025,ieee_mcp_healthcare_2025}.
 
 \paragraph{Challenge 2 - Absence of cost observability (motivates O2 and O3).}
 The second challenge concerns cost observability and operational efficiency. In the current deployment context of Maestro, \gls{llm} costs are consolidated under a shared cloud bill, with no detail per agent, workflow, or request type. The framework, as deployed today, performs no form of cost or token-consumption analysis: there is no mechanism to determine what costs most, no means of attributing expenditure to specific system components, and consequently no way to justify the investment in \gls{genai} capabilities to stakeholders \cite{wu2022sustainable}. Beyond this lack of segmentation, several technical dimensions of cost observability are also absent and are nonetheless essential for the projects built on top of the framework, namely:
@@ -99,26 +99,12 @@ equivalence across cloud providers. Where validation is still in progress at
 the time of writing, safegarded language is used to indicate that the stated
 outcome remains a hypothesis pending empirical confirmation.
 
-\textbf{O1 - MCP bidirectional integration.} The first objective is to
+\textbf{O1 - MCP client integration.} The first objective is to
 introduce, end-to-end, the \gls{mcp} into Maestro as a first-class
-connectivity primitive, with the framework acting both as a client and as a
-server of the protocol~\cite{anthropic2024mcp, modelcontextprotocol2024}. On
-the client side, Maestro will consume external MCP servers - such as MongoDB,
+connectivity primitive\cite{anthropic2024mcp, modelcontextprotocol2024}.
+Maestro will consume external MCP servers - such as MongoDB,
 Microsoft Learn, and Fabric MCP - without bespoke per-provider integration
-code, relying solely on protocol-level discovery and invocation. On the server
-side, Maestro will expose its own core capabilities - including \gls{rag}
-query, document ingestion, and session summarisation - as protocol-compliant
-MCP tools that can be invoked by any external MCP-compatible agent. The
-implementation will use the Anthropic MCP SDK together with FastMCP as the
-primary tooling, and will be carried out on top of Maestro's current
-Azure-based production stack. The objective will be considered fulfilled when
-(i) Maestro successfully consumes at least two heterogeneous external MCP
-servers without provider-specific integration code, validated by automated
-integration tests and a dedicated proof-of-concept for each MCP server used;
-and (ii) the Maestro MCP server exposes at least three core capabilities as
-valid MCP tools, consumable by at least one independent external client (for
-example, Claude Desktop or an external LangGraph
-agent~\cite{chase2022langchain}).
+code, relying solely on protocol-level discovery and invocation.
 
 \textbf{O2 - Unified cost telemetry pipeline.} The second objective is to
 instrument Maestro so that, for every \gls{llm} invocation, the platform
@@ -151,13 +137,13 @@ compression via LLMLingua~\cite{jiang2023llmlingua}, semantic caching via
 MongoDB Atlas Semantic Cache or Azure Managed Redis (conceptually grounded in
 GPTCache~\cite{bang2023gptcache}), and cascade routing via LangChain model
 routing~\cite{chase2022langchain} (inspired by the FrugalGPT cascade
-strategy~\cite{chen2023frugalgpt}). To structure this analysis, a \emph{three-layer tokenomics framework} - presented in detail in Chapter~\ref{cha:design} will aim to decompose the cost of a \gls{genai}
+strategy~\cite{chen2023frugalgpt}). To structure this analysis, a \emph{three-layer tokenomics framework} - presented in detail in Section~\ref{subsec:tokenomics-practice} - will aim to decompose the cost of a \gls{genai}
 invocation into the input layer (the tokens sent to the model), the model
 layer (the cost characteristics of the model that processes the request), and
 the output layer (the tokens returned to the caller); each candidate technique
 targets a different layer of this framework. The objective will be considered
 fulfilled when (i) the selected techniques achieve a significant reduction in cost-per-query relative to the O2 baseline; (ii) quality equivalence relative to the baseline is demonstrated on RAGAS faithfulness and
-answer relevancy scores via Two One-Sided Tests (TOST)~\cite{lakens_2017_tost} at $\alpha = 0.05$ with an equivalence margin of $\pm 0.05$; and (iii) the evaluation is conducted on real production
+answer relevance scores via Two One-Sided Tests (TOST)~\cite{lakens_2017_tost} at $\alpha = 0.05$ with an equivalence margin of $\pm 0.05$; and (iii) the evaluation is conducted on real production
 queries, partitioned into a control group and an experimental group. TOST is
 adopted in preference to a standard two-sample $t$-test because the research
 question is one of equivalence - showing that the experimental and control
@@ -202,7 +188,7 @@ original contributions:
 
 \begin{itemize}
 
-    \item \textbf{MCP bidirectional integration layer for Maestro.} An MCP
+    \item \textbf{MCP client integration layer for Maestro.} An MCP
     client module enabling Maestro to consume external MCP-compliant services
     without bespoke connectors~\cite{anthropic2024mcp, modelcontextprotocol2024}.
 
