@@ -8,8 +8,13 @@
 \chapter{Work Plan}
 \label{cha:work-plan}
 
-% TODO: Introduce the work plan.
-
+This chapter presents the work plan governing the remaining research
+activities.
+Section~\ref{sec:research-phases} describes the three active phases through
+which the four objectives are pursued.
+Section~\ref{sec:timeline} situates those phases within a concrete timeline.
+Section~\ref{sec:deliverables} specifies the deliverables and success criteria
+associated with each objective.
 
 %%------------------------------------------------------------
 %% SECTION: Research Phases
@@ -17,8 +22,49 @@
 \section{Research Phases}
 \label{sec:research-phases}
 
-% TODO: Describe the research phases.
+The work is organised across three active phases, executed from May 2026
+onward.
+Phase sequencing reflects the hard dependency order established in
+Section~\ref{subsec:phases}: O1 must precede O2, O2 is a strict prerequisite
+for O3, and O4 is conditional on the substantial completion of O3.
 
+\paragraph{Phase 1 - Technical Development.}
+This phase encompasses the implementation of O1 (\gls{mcp} Client
+Integration) and O2 (Unified Cost Telemetry Pipeline).
+O1 is architecturally self-contained and proceeds first; its completion
+establishes a standardised connectivity layer for the Maestro framework
+without dependency on any other objective.
+O2 follows and constitutes the most critical milestone of the entire work
+plan: it instruments 100\% of \gls{llm} invocation paths with Langfuse and
+validates reported costs against the Azure billing invoice, producing the
+quantitative production baseline without which no cost-reduction work can be
+selected, executed, or evaluated.
+No activity pertaining to O3 or O4 commences before the O2 baseline is
+available.
+
+\paragraph{Phase 2 - Results Consolidation and Technical Writing.}
+This phase covers the implementation of O3 (Tokenomics Cost Reduction), its
+rigorous statistical evaluation, and, contingent on time availability, O4
+(LangGraph Composable Agent Orchestration).
+The specific cost-reduction techniques applied under O3 - drawn from semantic
+caching, LLMLingua prompt compression, and cascade routing - are selected on
+the basis of the production usage patterns surfaced by the O2 baseline,
+following the three-layer tokenomics framework introduced in
+Section~\ref{subsec:tokenomics-practice}.
+Statistical equivalence of output quality is assessed via Two One-Sided Tests
+(TOST)~\cite{lakens_2017_tost} on \gls{ragas} faithfulness and answer
+relevance.
+O4 is pursued only if O3 is substantially complete before the end of November
+2026; it represents an independent architectural improvement rather than a
+dependency of O3.
+Chapter writing runs in parallel with implementation throughout this phase to
+prevent bottlenecks in the final period.
+
+\paragraph{Phase 3 - Final.}
+This phase is devoted to the consolidation of all written chapters into a
+coherent manuscript, iterative revision with both supervisors, formal approval,
+public defence, and official submission to NOVA~FCT.
+No new implementation work is initiated during this phase.
 
 %%------------------------------------------------------------
 %% SECTION: Timeline
@@ -26,8 +72,45 @@
 \section{Timeline}
 \label{sec:timeline}
 
-% TODO: Explain the timeline.
+The timeline spans from May 2026 to March 2027 and is summarised in
+Figure~\ref{fig:gantt}.
+The schedule reflects both the dependency ordering described in
+Section~\ref{sec:research-phases} and a deliberate strategy of overlapping
+implementation with writing wherever safe to do so.
 
+O1, already under way from the beginning of May 2026, runs through the end of
+July.
+O2 starts at the beginning of July, overlapping with the final weeks of O1 -
+a safe overlap given the architectural independence of the two objectives -
+and continues through the end of August.
+This overlap is intentional: it prevents an idle gap in development activity
+while O1 is being finalised, without compromising the O2 instrumentation work
+that must be complete before O3 begins.
+
+From September 2026 onward, the work plan bifurcates.
+O3 implementation begins at the start of September, aligned with the confirmed
+availability of the O2 baseline, and runs through the middle of November.
+The TOST statistical evaluation of O3 results occupies the second half of
+October through the end of November, overlapping the final weeks of O3
+implementation to allow statistical analysis to proceed as experimental results
+accumulate.
+Chapter~3 (System and Methodology) is written in parallel from the beginning of
+September to the middle of October, followed by Chapter~4 (Results), which runs
+from the beginning of November through the end of December.
+O4 is scheduled from the beginning of November to the middle of December,
+subject to the satisfactory completion of O3.
+
+Phase~3 begins at the start of January 2027, with the remainder of that month
+and February allocated to full manuscript revision, supervisor approval, public
+defence, and official submission to NOVA~FCT, targeting completion at
+the beginning of March 2027.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\linewidth]{5-Figures/Chapter4/gant-chart.png}
+    \caption{Gantt chart of the research work plan (May 2026 - March 2027).}
+    \label{fig:gantt}
+\end{figure}
 
 %%------------------------------------------------------------
 %% SECTION: Deliverables
@@ -35,4 +118,62 @@
 \section{Deliverables}
 \label{sec:deliverables}
 
-% TODO: Describe the deliverables.
+Each research objective is associated with a concrete, measurable deliverable
+and a set of success criteria that operationalise the objective conditions
+stated in Section~\ref{sec:objectives}.
+Table~\ref{tab:deliverables} consolidates this information.
+
+\begingroup
+\small
+\setlength{\LTpre}{\medskipamount}
+\setlength{\LTpost}{\medskipamount}
+\begin{longtable}{@{}p{0.16\linewidth} p{0.30\linewidth} p{0.46\linewidth}@{}}
+\caption{Research objectives, deliverables, and success criteria.}
+\label{tab:deliverables}\\
+\toprule
+\textbf{Objective} & \textbf{Deliverable} & \textbf{Success criteria} \\
+\midrule
+\endfirsthead
+\multicolumn{3}{@{}l}{\small\itshape Table~\ref{tab:deliverables} (continued)}\\
+\toprule
+\textbf{Objective} & \textbf{Deliverable} & \textbf{Success criteria} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{3}{r@{}}{\small\itshape continued on next page}\\
+\endfoot
+\bottomrule
+\endlastfoot
+O1 - \gls{mcp} client integration &
+  \gls{mcp} client layer for Maestro &
+  Maestro consumes external \gls{mcp} servers without provider-specific adapter
+  code\\
+\addlinespace
+O2 - Unified cost telemetry pipeline &
+  Langfuse and Azure Monitor instrumentation &
+  The \gls{llm} invocation paths are instrumented with per-invocation cost and
+  execution trace, the reported costs reconcile with the Azure billing invoice,
+  and the baseline is available before O3 begins \\
+\addlinespace
+O3 - Cost reduction via tokenomics optimisation &
+  Benchmark of complementary tokenomics techniques on the production workload &
+  Cost-per-query is reduced relative to the O2 baseline while quality
+  equivalence on \gls{ragas} faithfulness and answer relevance is demonstrated
+  via Two One-Sided Tests (TOST) \\
+\addlinespace
+O4 - Composable agent graph orchestration \textit{(if time permits)} &
+  LangGraph refactors of production workflows with unit tests &
+  Production workflows with structurally distinct topologies are refactored as
+  LangGraph graphs, with substantial Langfuse trace coverage and reduced lines
+  of code relative to the hand-crafted implementations \\
+\end{longtable}
+\endgroup
+
+The dependency structure embedded in this table is deliberate.
+O2 is listed before O3 because the success criterion of O3 - a reduction
+measured relative to the O2 baseline - is undefined until O2 is complete and
+validated.
+O4 carries an explicit contingency flag, consistent with the priority ordering
+stated in Section~\ref{sec:objectives}: it is pursued only after O3 is
+substantially complete, and its omission does not affect the validity of the
+dissertation's primary contributions.
