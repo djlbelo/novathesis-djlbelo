@@ -42,11 +42,11 @@ Sequence modelling with recurrent architectures such as \gls{lstm} and \gls{gru}
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/scale-dot-multi-head}
-    \caption{Scaled Dot-Product Attention (left) and Multi-Head Attention (right). Adapted from~\cite{vaswani2017attention}.}
+    \caption{Scaled Dot-Product Attention (left) and Multi-Head Attention (right). Borrowed from~\cite{vaswani2017attention}.}
     \label{fig:attention}
 \end{figure}
 
-Multi-Head Attention runs several such operations in parallel, allowing the model to attend to different types of relationships simultaneously. Positional encodings compensate for the architecture's permutation invariance. The resulting model achieved 28.4 BLEU on the WMT 2014 English-to-German benchmark, surpassing all prior approaches at a fraction of the training compute~\cite{vaswani2017attention}.
+Multi-Head Attention runs several such operations in parallel (Figure~\ref{fig:attention}), allowing the model to attend to different types of relationships simultaneously. Positional encodings compensate for the architecture's permutation invariance. The resulting model achieved 28.4 BLEU on the WMT 2014 English-to-German benchmark, surpassing all prior approaches at a fraction of the training compute~\cite{vaswani2017attention}.
 
 The Transformer's parallelism unlocked a new scaling regime, yielding encoder-only models such as BERT~\cite{devlin2018bert} and decoder-only models such as the GPT series~\cite{brown2020gpt3}. Crucially, attention scales quadratically with sequence length, \(O(n^2)\), making context length a primary cost driver in token-priced \gls{llm} \glspl{api}. This property is foundational to the \gls{finops} strategies explored in this dissertation - prompt compression, semantic caching, and dynamic model selection - each of which seeks to reduce the effective \(n\) processed per inference~\cite{vaswani2017attention}.
 
@@ -89,12 +89,12 @@ Capable open-weight models introduce a consequential degree of freedom into ente
 \subsection{Foundational Architecture}
 \label{subsec:rag_foundation}
 
-The canonical \gls{rag} formulation was introduced by Lewis et al.~\cite{lewis2020rag}, who proposed a fine-tuning recipe for generative models endowed with external non-parametric memory. The architecture comprises two components: (i)~a \emph{retriever} $p_\eta(z \mid x)$, implemented as a \gls{dpr}~\cite{karpukhin2020dpr} that maps queries and documents into a shared dense vector space, and (ii)~a \emph{generator} $p_\theta(y_i \mid x, z, y_{1:i-1})$, implemented as BART-large~\cite{lewis2020bart}, which conditions its output on the concatenation of the query $x$ and retrieved passages $z$.
+The canonical \gls{rag} formulation was introduced by Lewis et al.~\cite{lewis2020rag}, who proposed a fine-tuning recipe for generative models endowed with external non-parametric memory. The architecture comprises two components (Figure~\ref{fig:rag-architecture}): (i)~a \emph{retriever} $p_\eta(z \mid x)$, implemented as a \gls{dpr}~\cite{karpukhin2020dpr} that maps queries and documents into a shared dense vector space, and (ii)~a \emph{generator} $p_\theta(y_i \mid x, z, y_{1:i-1})$, implemented as BART-large~\cite{lewis2020bart}, which conditions its output on the concatenation of the query $x$ and retrieved passages $z$.
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/rag-retriever-BART-MIPS}
-    \caption{End-to-end \gls{rag} architecture combining a \gls{dpr} retriever with a BART-large generator. Adapted from~\cite{lewis2020rag}.}
+    \caption{End-to-end \gls{rag} architecture combining a \gls{dpr} retriever with a BART-large generator. Borrowed from~\cite{lewis2020rag}.}
     \label{fig:rag-architecture}
 \end{figure}
 
@@ -104,12 +104,12 @@ The retriever and generator are trained end-to-end by minimizing the negative ma
 \subsection{Architectural Evolution: Naive, Advanced, and Modular RAG}
 \label{subsec:rag_survey}
 
-Gao et al.~\cite{gao2023ragsurvey} systematize the evolution of \gls{rag} methods into a three-tier taxonomy.
+Gao et al.~\cite{gao2023ragsurvey} systematize the evolution of \gls{rag} methods into a three-tier taxonomy (Figure~\ref{fig:rag-taxonomy}).
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/naive-advanced-modular}
-    \caption{Three-tier \gls{rag} taxonomy: Naive, Advanced, and Modular \gls{rag}. Adapted from~\cite{gao2023ragsurvey}.}
+    \caption{Three-tier \gls{rag} taxonomy: Naive, Advanced, and Modular \gls{rag}. Borrowed from~\cite{gao2023ragsurvey}.}
     \label{fig:rag-taxonomy}
 \end{figure}
 
@@ -143,13 +143,13 @@ The preceding sections describe the \emph{components} of a modern \gls{genai} sy
 
 LangChain~\cite{chase2022langchain} addressed the challenge of composing \glspl{llm} with external tools, memory, and retrieval through three primitives: a \textit{chain} (a composable sequence of calls to an \gls{llm}, retriever, or tool), a \textit{tool} (any callable capability described in natural language and typed schema), and \textit{memory} modules for stateful multi-turn interactions.
 
-The theoretical foundation for this model-centric loop was established by Yao et al.~\cite{yao2022react} with the \gls{react} paradigm (\textit{Reason + Act}), which interleaves chain-of-thought reasoning with tool use in a single iterative cycle: the model emits a \textit{Thought}, selects an \textit{Action}, receives an \textit{Observation}, and repeats until a terminal condition is met. On multi-step knowledge-intensive tasks - HotpotQA, FEVER, ALFWorld, and WebShop - \gls{react} outperformed both chain-of-thought and action-only baselines, showing that tight coupling of reasoning and acting is essential for robust agent behavior~\cite{yao2022react}.
+The theoretical foundation for this model-centric loop was established by Yao et al.~\cite{yao2022react} with the \gls{react} paradigm (\textit{Reason + Act}), which interleaves chain-of-thought reasoning with tool use in a single iterative cycle: the model emits a \textit{Thought}, selects an \textit{Action}, receives an \textit{Observation}, and repeats until a terminal condition is met. On multi-step knowledge-intensive tasks - HotpotQA, FEVER, ALFWorld, and WebShop - \gls{react} outperformed both chain-of-thought and action-only baselines, showing that tight coupling of reasoning and acting is essential for robust agent behavior~\cite{yao2022react} (Figure~\ref{fig:react-loop}).
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/reAct-loop}
     \caption{The \gls{react} reasoning loop interleaving \textit{Thought},
-    \textit{Action}, and \textit{Observation} steps. Adapted from~\cite{yao2022react}.}
+    \textit{Action}, and \textit{Observation} steps. Borrowed from~\cite{yao2022react}.}
     \label{fig:react-loop}
 \end{figure} 
 
@@ -161,11 +161,11 @@ A persistent weakness of this orchestration paradigm is the absence of a standar
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/mcp-architecture}
-    \caption{\Gls{mcp} architecture showing the Host, Client, and Server roles connected via JSON-RPC~2.0. Adapted from~\cite{modelcontextprotocol2024}.}
+    \caption{\Gls{mcp} architecture showing the Host, Client, and Server roles connected via JSON-RPC~2.0. Borrowed from~\cite{modelcontextprotocol2024}.}
     \label{fig:mcp-architecture}
 \end{figure}
 
-The \gls{mcp}, introduced by Anthropic in 2024~\cite{anthropic2024mcp,modelcontextprotocol2024}, addresses this with an open, transport-agnostic protocol standardizing how \gls{llm} hosts expose and consume external capabilities. It defines three roles: an \textit{MCP Host} (the application embedding the \gls{llm}), an \textit{MCP Client} (managing connections to servers), and an \textit{MCP Server} (a lightweight process exposing capabilities over JSON-RPC~2.0 via standard I/O or HTTP with Server-Sent Events). Capabilities are organized into \textit{Tools} (invocable functions), \textit{Resources} (read-only data artifacts), and \textit{Prompts} (parameterized templates)~\cite{anthropic2024mcp,modelcontextprotocol2024}.
+The \gls{mcp}, introduced by Anthropic in 2024~\cite{anthropic2024mcp,modelcontextprotocol2024}, addresses this with an open, transport-agnostic protocol standardizing how \gls{llm} hosts expose and consume external capabilities (Figure~\ref{fig:mcp-architecture}). It defines three roles: an \textit{MCP Host} (the application embedding the \gls{llm}), an \textit{MCP Client} (managing connections to servers), and an \textit{MCP Server} (a lightweight process exposing capabilities over JSON-RPC~2.0 via standard I/O or HTTP with Server-Sent Events). Capabilities are organized into \textit{Tools} (invocable functions), \textit{Resources} (read-only data artifacts), and \textit{Prompts} (parameterized templates)~\cite{anthropic2024mcp,modelcontextprotocol2024}.
 
 Unlike vendor-specific function calling, \gls{mcp} is stateful and provider-agnostic, supporting dynamic capability discovery: a client can query any server for its current tool and resource catalog without prior knowledge of its implementation. This reduces the integration surface from $N \times M$ to $N + M$, and is directly relevant to multi-cloud enterprise deployments where heterogeneous data services must be exposed through a single protocol layer.
 
@@ -174,12 +174,12 @@ Unlike vendor-specific function calling, \gls{mcp} is stateful and provider-agno
 
 Enterprise production environments impose requirements that research prototypes do not address: identity-based access control, secret management, encryption, token-level cost observability, multi-tenancy isolation, cross-provider portability, and reliability under variable load. Meeting these needs requires a governed platform in which each component is independently deployable, swappable without contract changes, and instrumented for monitoring and audit compliance.
 
-The Maestro \gls{genai} Framework, developed by Closer Consulting, is a practitioner response to this gap~\cite{closer2025maestro}. Validated across production deployments in the energy, healthcare, financial, and pharmaceutical sectors, Maestro is a multi-repository, container-native microservices platform that decomposes the \gls{rag} pipeline into independently governed services. The \textit{\gls{llm} microservice} routes generation requests to Azure OpenAI, OpenAI, Azure AI Services, and Google Gemini behind a stable contract. The \textit{orchestrator} implements a \gls{react}-derived \gls{rag} loop - history retrieval, hybrid vector search, relevance filtering, prompt assembly, and \gls{llm} invocation - as a FastAPI service backed by LangChain. The \textit{vector database service} handles ingestion, chunking, embedding, and hybrid kNN+BM25 retrieval over MongoDB Atlas. Additional microservices provide provider-agnostic persistence (Azure Cosmos~DB, MongoDB), \gls{pii} detection via Microsoft Presidio, and frontend surfaces with Microsoft Entra~ID authentication. Infrastructure is provisioned declaratively via OpenTofu; current production deployments operate on Microsoft Azure with observability through OpenTelemetry. In production, the framework has demonstrated measurable impact: one deployment serving over~600 daily active users with 4,000 daily interactions across five \gls{llm} models, and another achieving 83\% question-answering accuracy over 2,907 indexed legal documents~\cite{closer2025maestro}.
+The Maestro \gls{genai} Framework, developed by Closer Consulting, is a practitioner response to this gap~\cite{closer2025maestro} (Figure~\ref{fig:maestro-functional}). Validated across production deployments in the energy, healthcare, financial, and pharmaceutical sectors, Maestro is a multi-repository, container-native microservices platform that decomposes the \gls{rag} pipeline into independently governed services. The \textit{\gls{llm} microservice} routes generation requests to Azure OpenAI, OpenAI, Azure AI Services, and Google Gemini behind a stable contract. The \textit{orchestrator} implements a \gls{react}-derived \gls{rag} loop - history retrieval, hybrid vector search, relevance filtering, prompt assembly, and \gls{llm} invocation - as a FastAPI service backed by LangChain. The \textit{vector database service} handles ingestion, chunking, embedding, and hybrid kNN+BM25 retrieval over MongoDB Atlas. Additional microservices provide provider-agnostic persistence (Azure Cosmos~DB, MongoDB), \gls{pii} detection via Microsoft Presidio, and frontend surfaces with Microsoft Entra~ID authentication. Infrastructure is provisioned declaratively via OpenTofu; current production deployments operate on Microsoft Azure with observability through OpenTelemetry. In production, the framework has demonstrated measurable impact: one deployment serving over~600 daily active users with 4,000 daily interactions across five \gls{llm} models, and another achieving 83\% question-answering accuracy over 2,907 indexed legal documents~\cite{closer2025maestro}.
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.85\textwidth]{5-Figures/Chapter2/maestro-architecture}
-    \caption{Functional architecture of the Maestro \gls{genai} Framework, illustrating the \textit{multi-agent orchestrator}, \textit{AI Gateway}, \textit{content moderation}, self-hosted and managed model endpoints, and observability layer. Adapted from~\cite{closer2025maestro}.}
+    \caption{Functional architecture of the Maestro \gls{genai} Framework, illustrating the \textit{multi-agent orchestrator}, \textit{AI Gateway}, \textit{content moderation}, self-hosted and managed model endpoints, and observability layer. Borrowed from~\cite{closer2025maestro}.}
     \label{fig:maestro-functional}
 \end{figure}
 
@@ -205,7 +205,7 @@ Armbrust et al.~\cite{armbrust2010view} identified three properties distinguishi
 
 Petcu~\cite{petcu2013interoperability} formalized multi-cloud engineering challenges by distinguishing \emph{portability} (the capacity to transfer a workload between cloud environments with bounded effort) from \emph{interoperability} (the capacity for components on different clouds to communicate at runtime), identifying four sources of lock-in: proprietary APIs, divergent data formats, incompatible service-level agreements, and asymmetric pricing models - each requiring a distinct mitigation through abstraction layers, protocol normalization, contractual harmonization, and unified billing instrumentation.
 
-Petcu~\cite{petcu2013interoperability}'s taxonomy classifies multi-cloud strategies into three archetypes: \emph{redundant} (one provider active, others standby), \emph{complementary} (distinct capabilities assigned to distinct providers), and \emph{federated} (unified abstraction transparent to the application). Maestro is designed to operate in complementary mode: \gls{aws} Bedrock, Azure OpenAI, and Google Gemini can each be exposed through a uniform \texttt{llm-microservice} interface. This stable contract instantiates precisely the abstraction-layer pattern advocated for resolving \gls{api} heterogeneity~\cite{petcu2013interoperability,closer2025maestro}.
+Petcu~\cite{petcu2013interoperability}'s taxonomy classifies multi-cloud strategies into three archetypes (Figure~\ref{fig:multi-cloud-archetypes-maestro}): \emph{redundant} (one provider active, others standby), \emph{complementary} (distinct capabilities assigned to distinct providers), and \emph{federated} (unified abstraction transparent to the application). Maestro is designed to operate in complementary mode: \gls{aws} Bedrock, Azure OpenAI, and Google Gemini can each be exposed through a uniform \texttt{llm-microservice} interface. This stable contract instantiates precisely the abstraction-layer pattern advocated for resolving \gls{api} heterogeneity~\cite{petcu2013interoperability,closer2025maestro}.
 
 \begin{figure}[htbp]
     \centering
@@ -236,12 +236,12 @@ Many production queries are not unique: users repeat, rephrase, or follow up on 
 \subsection{LLM Cascades}
 \label{subsec:llm-cascades}
 
-Where semantic caching reduces redundant calls, \gls{llm} cascades target \emph{which} model is invoked when a call is necessary. FrugalGPT studies how to route queries across a portfolio of models to minimize cost subject to accuracy constraints, on the premise that not all requests need the most capable model~\cite{chen2023frugalgpt}. Routing strategies range from rule-based policies on query features to multi-step cascades where a cheap model answers first and escalates only if its answer is judged unsatisfactory. Such cascades reduce inference cost by 50--98\% while matching the best single model's accuracy~\cite{chen2023frugalgpt}. This leverages both scaling-law and alignment research: larger models generally perform better but at higher per-token cost~\cite{brown2020gpt3}, while smaller, well-aligned models can outperform larger unaligned ones on preference metrics~\cite{ouyang2022instructgpt}. In Maestro, cascades can be realized at the \gls{llm} gateway, routing dynamically among on-premise open-weight models, mid-tier cloud \glspl{api}, and frontier proprietary models per a policy informed by query characteristics, historical performance, and business priorities~\cite{closer2025maestro,touvron2023llama2}.
+Where semantic caching reduces redundant calls, \gls{llm} cascades target \emph{which} model is invoked when a call is necessary. FrugalGPT studies how to route queries across a portfolio of models to minimize cost subject to accuracy constraints, on the premise that not all requests need the most capable model~\cite{chen2023frugalgpt} (Figure~\ref{fig:frugalgpt-strategies}). Routing strategies range from rule-based policies on query features to multi-step cascades where a cheap model answers first and escalates only if its answer is judged unsatisfactory. Such cascades reduce inference cost by 50--98\% while matching the best single model's accuracy~\cite{chen2023frugalgpt}. This leverages both scaling-law and alignment research: larger models generally perform better but at higher per-token cost~\cite{brown2020gpt3}, while smaller, well-aligned models can outperform larger unaligned ones on preference metrics~\cite{ouyang2022instructgpt}. In Maestro, cascades can be realized at the \gls{llm} gateway, routing dynamically among on-premise open-weight models, mid-tier cloud \glspl{api}, and frontier proprietary models per a policy informed by query characteristics, historical performance, and business priorities~\cite{closer2025maestro,touvron2023llama2}.
 
 \begin{figure}[t]
     \centering
     \includegraphics[width=\linewidth]{5-Figures/Chapter2/frugalGPT}
-    \caption{Overview of cost-reduction strategies in FrugalGPT, including prompt adaptation, \gls{llm} approximation, and \gls{llm} cascade. Adapted from Chen et al.~\cite{chen2023frugalgpt}.}
+    \caption{Overview of cost-reduction strategies in FrugalGPT, including prompt adaptation, \gls{llm} approximation, and \gls{llm} cascade. Borrowed from Chen et al.~\cite{chen2023frugalgpt}.}
     \label{fig:frugalgpt-strategies}
 \end{figure}
 
@@ -250,12 +250,12 @@ Where semantic caching reduces redundant calls, \gls{llm} cascades target \emph{
 
 Prompt compression addresses the number of tokens processed per inference. Transformer attention scales quadratically with sequence length, so longer prompts cost more and are slower~\cite{vaswani2017attention}. In enterprise workflows, prompt length is often dominated not by the user query but by system instructions, conversation history, and retrieved \gls{rag} context~\cite{gao2023ragsurvey,closer2025maestro}. A compression step inserted between retrieval and generation summarizes or filters retrieved passages before the \gls{llm} call, reducing token usage without sacrificing answer quality.
 
-The most academically grounded approach is the LLMLingua family. Jiang et al.~\cite{jiang2023llmlingua} use a small surrogate model to score each token's saliency via conditional perplexity: tokens highly predictable from context carry little unique information and can be removed. Its pipeline comprises a budget controller setting the global compression ratio, iterative token-level pruning, and an alignment stage recovering any quality loss, achieving up to 20$\times$ compression while preserving factual content~\cite{jiang2023llmlingua}. Pan et al.~\cite{pan2024llmlingua2} reformulate compression as token classification using a bidirectional encoder trained on GPT-4 distillation data, making retention decisions from both directions - task-agnostic, faster, and more faithful than the perplexity-based approach~\cite{pan2024llmlingua2}. Both exploit the same gap: a large fraction of tokens in any well-formed prompt are consumed by grammatical predictability rather than factual content.
+The most academically grounded approach is the LLMLingua family (Figure~\ref{fig:llmlingua-pipeline}). Jiang et al.~\cite{jiang2023llmlingua} use a small surrogate model to score each token's saliency via conditional perplexity: tokens highly predictable from context carry little unique information and can be removed. Its pipeline comprises a budget controller setting the global compression ratio, iterative token-level pruning, and an alignment stage recovering any quality loss, achieving up to 20$\times$ compression while preserving factual content~\cite{jiang2023llmlingua}. Pan et al.~\cite{pan2024llmlingua2} reformulate compression as token classification using a bidirectional encoder trained on GPT-4 distillation data, making retention decisions from both directions - task-agnostic, faster, and more faithful than the perplexity-based approach~\cite{pan2024llmlingua2}. Both exploit the same gap: a large fraction of tokens in any well-formed prompt are consumed by grammatical predictability rather than factual content.
 
 \begin{figure}[t]
     \centering
     \includegraphics[width=\linewidth]{5-Figures/Chapter2/llmlingua}
-    \caption{The LLMLingua coarse-to-fine prompt compression framework, comprising a budget controller, iterative token-level compression, and a distribution alignment stage. The small surrogate model scores token saliency via conditional perplexity; low-saliency tokens are iteratively removed before the compressed prompt is forwarded to the target \gls{llm}. Adapted from Jiang et al. \cite{jiang2023llmlingua}.}
+    \caption{The LLMLingua coarse-to-fine prompt compression framework, comprising a budget controller, iterative token-level compression, and a distribution alignment stage. The small surrogate model scores token saliency via conditional perplexity; low-saliency tokens are iteratively removed before the compressed prompt is forwarded to the target \gls{llm}. Borrowed from Jiang et al.~\cite{jiang2023llmlingua}.}
     \label{fig:llmlingua-pipeline}
 \end{figure}
 
@@ -274,7 +274,7 @@ Sardana and Frankle~\cite{a16z2024llmflation} introduce ``LLMflation'' to descri
 
 Beyond model- and retrieval-layer optimisations, token consumption is shaped by how structured data is serialised into prompts and how verbose the requested output is. TOON (Token-Oriented Object Notation) is a compact drop-in replacement for JSON in \gls{llm} prompts that declares column headers once and encodes rows as tab-delimited values, eliminating per-row key repetition~\cite{toon2025}, with practitioner benchmarks reporting 30--60\% token reductions on flat tabular structures. Caveman Compression~\cite{brussee2025caveman} targets the output side: \glspl{llm} can produce factually equivalent responses in a telegraphic register omitting articles, auxiliary verbs, and hedging, achieving roughly 75\% output token reduction on structured tasks~\cite{brussee2025caveman}; a subsequent distillation~\cite{guzik2026cavemanmicro} reduced the meta-instruction from 552 to 85 tokens while preserving comparable savings. Both exploit the same gap as LLMLingua: tokens consumed by predictable surface forms rather than factual content. These findings originate in practitioner benchmarks rather than peer-reviewed studies, and are included as empirical evidence motivating formal investigation.
 
-The three-layer tokenomics model can now be stated explicitly. At the \emph{model layer}, cascade routing and dynamic model selection~\cite{chen2023frugalgpt} invoke expensive frontier models only when warranted. At the \emph{retrieval layer}, semantic caching~\cite{bang2023gptcache}, prompt caching, and reranking prevent redundant calls and filter irrelevant context. At the \emph{representation layer}, compression such as LLMLingua~\cite{jiang2023llmlingua}, format optimisations such as TOON~\cite{toon2025}, and output style control such as Caveman Compression~\cite{brussee2025caveman} eliminate tokens whose marginal semantic contribution is low. This taxonomy frames the engineering contributions of this dissertation, in which Maestro improvements address cost levers at all three layers within a unified, provider-portable architecture.
+The three-layer tokenomics model can now be stated explicitly (Figure~\ref{fig:tokenomics-layers}). At the \emph{model layer}, cascade routing and dynamic model selection~\cite{chen2023frugalgpt} invoke expensive frontier models only when warranted. At the \emph{retrieval layer}, semantic caching~\cite{bang2023gptcache}, prompt caching, and reranking prevent redundant calls and filter irrelevant context. At the \emph{representation layer}, compression such as LLMLingua~\cite{jiang2023llmlingua}, format optimisations such as TOON~\cite{toon2025}, and output style control such as Caveman Compression~\cite{brussee2025caveman} eliminate tokens whose marginal semantic contribution is low. This taxonomy frames the engineering contributions of this dissertation, in which Maestro improvements address cost levers at all three layers within a unified, provider-portable architecture.
 
 \begin{figure}[t]
     \centering
