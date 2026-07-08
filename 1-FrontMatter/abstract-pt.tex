@@ -6,12 +6,11 @@
 
 \typeout{NT FILE abstract-pt.tex}%
 
-% TODO: Escreva o seu resumo em Português (máx. 1 página).
-% O resumo deve responder a:
-%   1. Qual é o problema?
-%   2. Porque é relevante/desafiante?
-%   3. Qual é a abordagem/solução proposta?
-%   4. Quais são os principais resultados / contribuições?
+Com a adoção crescente de inteligência artificial generativa (GenAI) em produção, organizações dependem cada vez mais de plataformas multi-cloud para escalar aplicações inteligentes, controlando risco operacional e custos. Neste contexto, a framework Maestro, desenvolvida na Closer Consulting numa arquitetura multi-cloud governada, é base para construir serviços GenAI com RAG, exigindo observabilidade, interoperabilidade e controlo financeiro.
+
+Esta dissertação aborda três desafios no uso produtivo do Maestro: 1) conetividade fragmentada com ferramentas externas; 2) falta de telemetria detalhada de custos e qualidade em workloads de LLM; 3) limitações na modularidade e rastreabilidade da orquestração multi-agente. O objetivo é otimizar custos e operações em ambientes GenAI multi-cloud, via integração por protocolo, monitorização detalhada do consumo de tokens e despesa, e padrões de orquestração mais expressivos para workflows complexos.
+
+O trabalho baseia-se em Design Science Research sobre implementações reais do Maestro. Propõe-se uma camada de conetividade baseada no Model Context Protocol (MCP) e um pipeline de telemetria unificado juntando Langfuse (observabilidade LLM) e OpenTelemetry (monitorização cloud). Incluem-se mecanismos de otimização inspirados em tokenomics (compressão de prompts, cache semântica, routing dinâmico de modelos), avaliados com dados reais de produção através de baselines quantitativos e testes de equivalência. Prevê-se ainda a reestruturação da orquestração em grafos reutilizáveis de agentes usando LangGraph e a mesma stack de observabilidade.
 
 \keywords{
   Multi-Cloud \and

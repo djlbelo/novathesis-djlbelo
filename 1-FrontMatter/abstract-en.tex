@@ -6,12 +6,11 @@
 
 \typeout{NT FILE abstract-en.tex}%
 
-% TODO: Write your abstract in English (max. 1 page).
-% The abstract should answer:
-%   1. What is the problem?
-%   2. Why is it relevant/challenging?
-%   3. What is your proposed approach/solution?
-%   4. What are the main results / contributions?
+As Generative Artificial Intelligence (GenAI) systems will move into established production deployments across sectors and cloud providers, organisations will increasingly depend on multi-cloud platforms to deliver intelligent applications at scale while controlling operational risk and cost. In this context, the Maestro framework, developed at Closer Consulting and operated in a governed multi-cloud architecture, will serve as a substrate for building retrieval-augmented GenAI services with strict requirements on observability, interoperability, and financial accountability.
+
+The work reported in this dissertation will address three structural problems observed in Maestro's current production use: 1) fragmented connectivity between the framework and external tools and services; 2) the absence of granular cost and quality telemetry for Large Language Model (LLM) workloads; and 3) limited composability and traceability for multi-agent orchestration. The overall aim will be to improve cost and operations optimisation in multi-cloud GenAI environments by enabling protocol-based integration of heterogeneous capabilities, data-driven insight into token consumption and monetary expenditure, and more expressive orchestration patterns for complex, production-grade workflows.
+
+To achieve this aim, the dissertation will follow a Design Science Research methodology grounded in real Maestro deployments. It will introduce a protocol-centric connectivity layer based on the Model Context Protocol (MCP) and will augment the framework with a unified telemetry pipeline that combines Langfuse for LLM observability with a cloud-native monitoring stack over OpenTelemetry. In addition, it will design tokenomics-driven optimisation mechanisms such as prompt compression, semantic caching, and dynamic model routing. These mechanisms will be evaluated on real production queries using quantitative baselines and equivalence testing, and the orchestration layer will be refactored into reusable LangGraph-based agent graphs that share the same observability stack.
 
 \keywords{
   Multi-Cloud \and
