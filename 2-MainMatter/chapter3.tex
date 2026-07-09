@@ -189,10 +189,7 @@ context.
 DSR prescribes an iterative cycle of problem identification, artifact design,
 construction, and rigorous evaluation conducted in close collaboration with the
 environment that defines the problem.
-This is appropriate here because the contributions - an \gls{mcp} integration layer,
-an observability pipeline, cost-reduction mechanisms, and a composable
-orchestration runtime - can only be assessed meaningfully under production
-conditions.
+This is appropriate here for the same reasons detailed in Section~\ref{sec:objectives} in Chapter~\ref{cha:introduction}: the contributions - an \gls{mcp} integration layer, observability pipeline, cost-reduction mechanisms, and a composable orchestration runtime—must be assessed under production conditions to establish their validity.
 The production Maestro deployment on Microsoft Azure serves simultaneously as
 engineering substrate, experimental environment, and source of evaluation data.
 
@@ -309,7 +306,7 @@ none.
 The primary threat to \textit{internal validity} in O3 is the non-stationarity
 of the production query distribution: if user behaviour shifts between the
 baseline and intervention period, observed cost differences may reflect workload
-change rather than technique efficacy.
+change rather than technique effectiveness.
 This is mitigated by partitioning queries into control and experimental groups
 within the same observation window, stratified to preserve query-type
 distribution.

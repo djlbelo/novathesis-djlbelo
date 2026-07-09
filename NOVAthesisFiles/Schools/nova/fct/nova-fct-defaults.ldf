@@ -240,8 +240,11 @@
   % \ifoptionequal{/novathesis/doctype}{mscplan}{Dissertation Plan\\[1pt]}{}%
   \THEdegreename(\@LANG@COVER)%
   {\ifdatadefined{specialization}(\@LANG@COVER){%
-  \fontsize{11}{11}\selectfont
-  \\\THEspecialization(\@LANG@COVER)}{}}%
+  \edef\@nt@spec@tmp{\thespecialization(\@LANG@COVER)}%
+  \ifx\@nt@spec@tmp\@empty\else%
+    \fontsize{11}{11}\selectfont
+    \\\THEspecialization(\@LANG@COVER)%
+  \fi}{}}%
   \\[3mm]%
   \theuniversity(\@LANG@COVER)\\[1pt]%
   \iftoggle{/novathesis/print/timestamp}{%
@@ -308,10 +311,12 @@
 
 % The committee
 \ntaddtocover[vspace=1,hspace=3.5cm,halign=l]{2-1}{%
-  \committeetitlestringfont():={\bfseries}%
-  \committeestringfont():={\bfseries}%
-  \fontsize{10}{10}\selectfont%
-  \ntprintpersons{0.9}{2}{committee}{\thecommitteeorder()}%
+  \iftoggle{/novathesis/print/committee}{%
+    \committeetitlestringfont():={\bfseries}%
+    \committeestringfont():={\bfseries}%
+    \fontsize{10}{10}\selectfont%
+    \ntprintpersons{0.9}{2}{committee}{\thecommitteeorder()}%
+  }{}%
 }
 
 % Date
@@ -321,8 +326,11 @@
   % \ifoptionequal{/novathesis/doctype}{mscplan}{Dissertation Plan\\[1pt]}{}%
   \THEdegreename(\@LANG@COVER)%
   {\ifdatadefined{specialization}(\@LANG@COVER){%
-  \fontsize{8}{9}\selectfont
-  \\\THEspecialization(\@LANG@COVER)}{}}%
+  \edef\@nt@spec@tmp{\thespecialization(\@LANG@COVER)}%
+  \ifx\@nt@spec@tmp\@empty\else%
+    \fontsize{8}{9}\selectfont
+    \\\THEspecialization(\@LANG@COVER)%
+  \fi}{}}%
   \\[1.25ex]%
   \theuniversity(\@LANG@COVER)\\[1pt]%
   \iftoggle{/novathesis/print/timestamp}{%

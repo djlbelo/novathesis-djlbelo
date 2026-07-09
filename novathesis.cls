@@ -1396,7 +1396,7 @@
             {\@DOCCLASS,\@LANG@COVER},%
             {\@LANG@COVER}%
   )%
-  \ifblank{\match}{\specialization(#1)={#2}}{\specialization(#1)={\specmatch\ #2}}%
+  \ifblank{#2}{\specialization(#1)={}}{\ifblank{\specmatch}{\specialization(#1)={#2}}{\specialization(#1)={\specmatch\ #2}}}%
   \minorfield(#1)={#2}%
 }
 
@@ -2055,7 +2055,7 @@
                   {\ifmaindoc{\ntsetup{spine/layout=trim}}
                              {\ntsetup{spine/layout=off}}}}
     {}
-\ifdocfinal{\ntsetup{print/committee=true}}{}
+%\ifdocfinal{\ntsetup{print/committee=true}}{}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newcommand{\@nt@loadallfiles}[2]{\optionlistdo{/@nt/file/#2/#1}{\@ntloadfile@i{##1}}}

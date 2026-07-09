@@ -51,11 +51,11 @@
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Danish (dk)
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\defaultnttitle(en)             :={A Very Long and Impressive\\Thesis Title With a Forced Line Break}
+\defaultnttitle(en)             :={Cost and Operations Optimization in Multi-Cloud Environments over GenAI}
 \defaultntsubtitle(en)          :={Some Thoughts on the Life, the Universe,\\and Everything Else}
 \defaultntdepartment(en)        :={Department of\\Name of the Department}
 \defaultntdegreename(en)        :={Study Program Name}
-\defaultntspecialization(en)    :={Specialization Name}
+\defaultntspecialization(en)    :={}
 \defaultntauthordegree(en)      :={Master/BSc in Name of Previous Degree}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
